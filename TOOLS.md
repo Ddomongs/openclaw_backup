@@ -1,40 +1,32 @@
-# TOOLS.md - Local Notes
+# TOOLS.md — 도구 및 환경
 
-Skills define _how_ tools work. This file is for _your_ specifics — the stuff that's unique to your setup.
+## 플랫폼
+- **네이버 스마트스토어**: 주력 판매 채널. 톡톡 CS, 주문관리, 상품관리.
+- **쿠팡**: 로켓그로스/마켓플레이스. API 연동.
+- **지마켓/11번가**: 보조 판매 채널.
+- **퍼센티(Percenty)**: 상품 일괄 등록 도구. 배치 50개 단위, 20분 타임아웃.
+- **타오바오/알리바바/알리익스프레스**: 중국 소싱 플랫폼.
 
-## What Goes Here
+## 배송/물류
+- **퀵스타(Quickstar)**: 주력 배대지. 중국 → 한국 포워딩.
+- **토스토스**: 보조 배대지.
+- **tracking.tipoasis.com**: 자체 통합 배송 추적 (유니패스 관세 + 국내 택배).
+- **유니패스(unipass.customs.go.kr)**: 관세청 통관 조회.
 
-Things like:
+## 결제
+- **알리페이**: 중국 플랫폼 결제용.
+- **유니온페이 카드**: 신한 The CLASSIC-Y (주), KB 가온글로벌 (보조).
 
-- Camera names and locations
-- SSH hosts and aliases
-- Preferred voices for TTS
-- Speaker/room names
-- Device nicknames
-- Anything environment-specific
+## 개발/자동화
+- **크롬 확장 프로그램**: CS 자동 답변 버튼 주입 (톡톡, 주문문의, Q&A).
+- **percenty-auto-upload.js**: 퍼센티 배치 업로드 스크립트.
+- **AutoHotkey v2**: Windows 매크로 자동화.
+- **올랑이 매크로 키패드**: 반복 작업 단축키.
 
-## Examples
+## 채널 ID (Discord)
+- 서버 ID: 1488029161518927883
+- 메인 채널: (필요시 추가)
 
-```markdown
-### Cameras
-
-- living-room → Main area, 180° wide angle
-- front-door → Entrance, motion-triggered
-
-### SSH
-
-- home-server → 192.168.1.100, user: admin
-
-### TTS
-
-- Preferred voice: "Nova" (warm, slightly British)
-- Default speaker: Kitchen HomePod
-```
-
-## Why Separate?
-
-Skills are shared. Your setup is yours. Keeping them apart means you can update skills without losing your notes, and share skills without leaking your infrastructure.
-
----
-
-Add whatever helps you do your job. This is your cheat sheet.
+## 참고
+- 도구 권한 부여/해제는 이 파일이 아닌 openclaw.json에서 관리.
+- 새 도구 추가 시 이 문서 업데이트할 것.

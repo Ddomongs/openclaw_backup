@@ -1,0 +1,25 @@
+# OpenClaw local internals
+.openclaw/
+
+# Long-term/private memory (opt-in later if desired)
+memory/
+MEMORY.md
+
+# OS / editor noise
+.DS_Store
+*.swp
+*.swo
+*~
+
+# Env / secrets
+.env
+.env.*
+*.key
+*.pem
+*.p12
+*.mobileconfig
+
+# Logs / temp
+*.log
+tmp/
+temp/

@@ -1,7 +1,17 @@
-# HEARTBEAT.md Template
+# HEARTBEAT.md — 정기 작업
 
-```markdown
-# Keep this file empty (or with only comments) to skip heartbeat API calls.
+## 매 하트비트마다 확인
+- 미답변 CS 문의가 있는지 체크하고, 있으면 알림.
+- 통관 보류 건이 있는지 tracking.tipoasis.com 확인.
+- 긴급 클레임 발생 시 즉시 대표에게 보고.
 
-# Add tasks below when you want the agent to check something periodically.
-```
+## 아침 브리핑 (09:00 KST)
+- 어제 처리/미처리 CS 건수 요약.
+- 현재 배송 중인 주문 현황.
+- 통관 진행 상태 이상 유무.
+- 오늘 처리할 우선순위 업무 목록.
+
+## 저녁 마감 (21:00 KST)
+- 오늘 처리 완료 건수 보고.
+- 미처리 건 목록과 사유.
+- 특이사항/이슈 기록을 memory/YYYY-MM-DD.md에 저장.
