@@ -104,7 +104,7 @@
 ### 기본 흐름
 1. 상품 Q&A 페이지 진입
 2. 브라우저/MCP 연결 상태를 먼저 확인한다.
-3. 가능하면 `./scripts/browser-mcp/browser-ensure-ready.sh`를 먼저 실행해 `ready` 여부를 확인한다.
+3. 반드시 `./scripts/browser-mcp/browser-ensure-ready.sh`를 먼저 실행해 `ready` 여부를 확인한다.
 4. 연결이 살아 있으면 기존 세션을 그대로 사용한다.
 5. 연결이 끊겼거나 실제 제어가 안 될 때만 attach/복구를 시도한다.
 6. Google Chrome이 실행되어 있지 않으면, 로그인 상태를 보장할 수 없으므로 자동으로 새 브라우저를 띄워 진행하지 않는다.
@@ -118,6 +118,7 @@
    - 팝업 감지/승인 모니터 스크립트: `./scripts/browser-mcp/chrome-dev-approve-monitor.sh`
    - 승인 후 attach 재시도 스크립트: `./scripts/browser-mcp/chrome-mcp-attach-approved.sh`
    - 승인 후 Q&A 점검 재개 스크립트: `./scripts/browser-mcp/qna-resume-after-approval.sh`
+11-1. 상품 Q&A 외의 다른 browser 도구 작업도 동일하게 `./scripts/browser-mcp/browser-ensure-ready.sh`를 공통 선행 단계로 사용한다.
 12. 답변 필터를 `미답변`으로 설정한다.
 13. `검색` 버튼 클릭
 14. 미답변 목록 추출

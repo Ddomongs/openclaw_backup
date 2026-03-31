@@ -18,10 +18,11 @@
 - 같은 오류나 같은 이슈는 반복 보고하지 말고, 최초 보고 여부를 먼저 확인한다.
 - 웹 검색, 웹페이지 확인, 로그인된 사이트 점검, 탭/페이지 조작이 필요한 작업은 `web_search`/`web_fetch`보다 Chrome Dev 기반 `browser` 도구를 우선 사용한다.
 - 브라우저 기반 작업 전에는 먼저 브라우저/MCP 연결 상태를 확인한다.
-- 브라우저 기반 작업 시작 전에는 가능하면 `./scripts/browser-mcp/browser-ensure-ready.sh`로 `ready` 여부를 확인하고, `chrome_running_mcp_detached`면 attach + 허용 자동 처리까지 먼저 시도한다.
+- 브라우저 기반 작업 시작 전에는 반드시 `./scripts/browser-mcp/browser-ensure-ready.sh`를 먼저 실행해 `ready` 여부를 확인하고, `chrome_running_mcp_detached`면 attach + 허용 자동 처리까지 먼저 시도한다.
 - 연결이 이미 살아 있으면 기존 세션을 그대로 사용하고, 불필요한 재attach를 하지 않는다.
 - 재attach 또는 복구 시도는 연결이 끊겼거나 실제 제어가 안 될 때만 진행한다.
 - `scripts/browser-mcp/browser-ensure-ready.sh`가 `ready`를 반환하면 그 세션을 그대로 사용하고, `precheck_blocked` 또는 `attach_failed`면 상태를 숨기지 말고 대표님께 원인을 짧게 보고한다.
+- browser 도구를 사용하는 모든 작업은 예외 없이 `scripts/browser-mcp/browser-ensure-ready.sh`를 선행한 뒤에만 진행한다.
 - 브라우저 사용이 가능한 업무에서 browser 도구를 먼저 시도하지 않고 `web_search`/`web_fetch`로 우회하지 않는다. 예외는 대표님이 명시적으로 일반 웹검색을 요청한 경우뿐이다.
 
 ## 문서 운영
