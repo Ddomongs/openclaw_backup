@@ -10,10 +10,22 @@ SLEEP_INTERVAL="${SLEEP_INTERVAL:-1}"
 BROWSER_PROCESS_NAME="${BROWSER_PROCESS_NAME:-Google Chrome}"
 PROMPT_WINDOW_NAME="${PROMPT_WINDOW_NAME:-원격 디버깅을 허용하시겠습니까?}"
 ALLOW_BUTTON_NAME="${ALLOW_BUTTON_NAME:-허용}"
+PEEKABOO_BIN="${PEEKABOO_BIN:-peekaboo}"
+
+BUTTON_CANDIDATES=("허용" "확인" "열기" "승인")
 
 end_time=$(( $(date +%s) + DURATION_SECONDS ))
 
 click_allow_prompt() {
+  if command -v "$PEEKABOO_BIN" >/dev/null 2>&1; then
+    local button
+    for button in "${BUTTON_CANDIDATES[@]}"; do
+      if "$PEEKABOO_BIN" dialog click --button "$button" >/dev/null 2>&1; then
+        return 0
+      fi
+    done
+  fi
+
   osascript <<EOF >/dev/null 2>&1
 try
   tell application "System Events"
