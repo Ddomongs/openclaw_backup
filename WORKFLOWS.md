@@ -111,6 +111,9 @@
 8. 대표 승인 후 별도 실행에서만 attach 재시도 + 허용 팝업 처리 + 재확인을 진행한다.
 9. attach 복구가 성공한 경우에만 이후 상품 Q&A 점검 단계로 넘어간다.
 10. attach 복구가 실패하면 실패 원인을 보고하고 종료한다.
+   - 점검 전 상태 확인 스크립트: `./chrome-mcp-preflight.sh`
+   - 승인 후 attach 재시도 스크립트: `./chrome-mcp-attach-approved.sh`
+   - 승인 후 Q&A 점검 재개 스크립트: `./qna-resume-after-approval.sh`
 11. 답변 필터를 `미답변`으로 설정한다.
 12. `검색` 버튼 클릭
 13. 미답변 목록 추출
