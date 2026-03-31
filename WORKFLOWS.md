@@ -112,6 +112,7 @@
 9. attach 복구가 성공한 경우에만 이후 상품 Q&A 점검 단계로 넘어간다.
 10. attach 복구가 실패하면 실패 원인을 보고하고 종료한다.
    - 점검 전 상태 확인 스크립트: `./chrome-mcp-preflight.sh`
+   - 팝업 감지/승인 모니터 스크립트: `./chrome-dev-approve-monitor.sh`
    - 승인 후 attach 재시도 스크립트: `./chrome-mcp-attach-approved.sh`
    - 승인 후 Q&A 점검 재개 스크립트: `./qna-resume-after-approval.sh`
 11. 답변 필터를 `미답변`으로 설정한다.

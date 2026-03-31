@@ -17,6 +17,19 @@ BUTTON_CANDIDATES=("허용" "확인" "열기" "승인")
 end_time=$(( $(date +%s) + DURATION_SECONDS ))
 
 click_allow_prompt() {
+  osascript <<EOF >/dev/null 2>&1
+try
+  tell application "System Events"
+    tell process "$BROWSER_PROCESS_NAME"
+      try
+        click button 3 of group 1 of group 2 of group 1 of group 1 of group "$PROMPT_WINDOW_NAME" of sheet 1 of window 1
+        return
+      end try
+    end tell
+  end tell
+end try
+EOF
+
   if command -v "$PEEKABOO_BIN" >/dev/null 2>&1; then
     local button
     for button in "${BUTTON_CANDIDATES[@]}"; do
