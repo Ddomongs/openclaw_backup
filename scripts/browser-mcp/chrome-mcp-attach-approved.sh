@@ -39,10 +39,24 @@ if [ "$DRY_RUN" = "true" ]; then
 fi
 
 probe_attach() {
+  local profiles_code=0
   local status_code=0
   local tabs_code=0
+  local profiles_output=""
   local status_output=""
   local tabs_output=""
+
+  profiles_output="$($OPENCLAW_BIN browser --timeout "$ATTACH_TIMEOUT_MS" --browser-profile "$PROFILE" profiles 2>&1)" || profiles_code=$?
+  if [ "$profiles_code" -eq 0 ]; then
+    local user_line=""
+    user_line="$(printf '%s\n' "$profiles_output" | grep -E "^${PROFILE}:" | head -n 1 || true)"
+    if [ -n "$user_line" ] && printf '%s' "$user_line" | grep -q ': running'; then
+      echo "ATTACH_RESULT=ok"
+      echo "DETAIL=Attach succeeded via profiles probe"
+      printf 'OUTPUT<<EOF\n%s\nEOF\n' "$profiles_output"
+      return 0
+    fi
+  fi
 
   status_output="$($OPENCLAW_BIN browser --timeout "$ATTACH_TIMEOUT_MS" --browser-profile "$PROFILE" status 2>&1)" || status_code=$?
   if [ "$status_code" -eq 0 ] && printf '%s' "$status_output" | grep -Eqi 'running[:= ]+true|transport[:= ].*chrome-mcp'; then
@@ -60,6 +74,7 @@ probe_attach() {
     return 0
   fi
 
+  printf 'PROFILES_OUTPUT<<EOF\n%s\nEOF\n' "$profiles_output"
   printf 'STATUS_OUTPUT<<EOF\n%s\nEOF\n' "$status_output"
   printf 'TABS_OUTPUT<<EOF\n%s\nEOF\n' "$tabs_output"
   return 1

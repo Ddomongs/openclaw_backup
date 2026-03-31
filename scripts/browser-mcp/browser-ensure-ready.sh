@@ -7,9 +7,14 @@ PRECHECK_SCRIPT="${PRECHECK_SCRIPT:-$SCRIPT_DIR/chrome-mcp-preflight.sh}"
 ATTACH_SCRIPT="${ATTACH_SCRIPT:-$SCRIPT_DIR/chrome-mcp-attach-approved.sh}"
 APPROVER_SCRIPT="${APPROVER_SCRIPT:-$SCRIPT_DIR/chrome-dev-approve-once.sh}"
 APPROVER_MONITOR_SCRIPT="${APPROVER_MONITOR_SCRIPT:-$SCRIPT_DIR/chrome-dev-approve-monitor.sh}"
+APPROVER_SESSION_SCRIPT="${APPROVER_SESSION_SCRIPT:-$SCRIPT_DIR/chrome-dev-approve-session.sh}"
 APPROVAL_WATCH_SECONDS="${APPROVAL_WATCH_SECONDS:-20}"
 APPROVAL_MONITOR_LOG="${APPROVAL_MONITOR_LOG:-/tmp/browser-ensure-ready-approve-monitor.log}"
 APPROVAL_ONCE_LOG="${APPROVAL_ONCE_LOG:-/tmp/browser-ensure-ready-approve-once.log}"
+AUTO_OPEN_CHROME_IF_OFF="${AUTO_OPEN_CHROME_IF_OFF:-true}"
+CHROME_APP_NAME="${CHROME_APP_NAME:-Google Chrome}"
+CHROME_OPEN_WAIT_SECONDS="${CHROME_OPEN_WAIT_SECONDS:-3}"
+BACKGROUND_APPROVAL_SESSION="${BACKGROUND_APPROVAL_SESSION:-true}"
 DRY_RUN="false"
 
 while [ $# -gt 0 ]; do
@@ -43,6 +48,10 @@ start_approval_helpers() {
     return 0
   fi
 
+  if [ "$BACKGROUND_APPROVAL_SESSION" = "true" ]; then
+    "$APPROVER_SESSION_SCRIPT" start >/dev/null 2>&1 || true
+  fi
+
   WATCH_SECONDS="$APPROVAL_WATCH_SECONDS" \
   APPROVER_DURATION_SECONDS="$APPROVAL_WATCH_SECONDS" \
   APPROVER_SCRIPT="$APPROVER_SCRIPT" \
@@ -70,6 +79,23 @@ precheck_code=0
 precheck_output="$($PRECHECK_SCRIPT 2>&1)" || precheck_code=$?
 state="$(read_state "$precheck_output")"
 reason="$(read_reason "$precheck_output")"
+
+if [ "$state" = "chrome_off" ] && [ "$AUTO_OPEN_CHROME_IF_OFF" = "true" ]; then
+  printf '%s\n' "$precheck_output"
+  if [ "$DRY_RUN" = "true" ]; then
+    echo "AUTO_ACTION=open_chrome"
+    echo "ENSURE_RESULT=dry_run"
+    exit 0
+  fi
+
+  open -a "$CHROME_APP_NAME"
+  sleep "$CHROME_OPEN_WAIT_SECONDS"
+
+  precheck_code=0
+  precheck_output="$($PRECHECK_SCRIPT 2>&1)" || precheck_code=$?
+  state="$(read_state "$precheck_output")"
+  reason="$(read_reason "$precheck_output")"
+fi
 
 case "$state" in
   ready)
