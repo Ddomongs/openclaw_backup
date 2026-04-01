@@ -23,6 +23,7 @@
 - 연결이 이미 살아 있으면 기존 세션을 그대로 사용하고, 불필요한 재attach를 하지 않는다.
 - 재attach 또는 복구 시도는 연결이 끊겼거나 실제 제어가 안 될 때만 진행한다.
 - `scripts/browser-mcp/browser-ensure-ready.sh`가 `ready`를 반환하면 그 세션을 그대로 사용하고, `precheck_blocked` 또는 `attach_failed`면 상태를 숨기지 말고 대표님께 원인을 짧게 보고한다.
+- 스마트스토어 접근 시 로그인 안 된 화면이 나오면, 먼저 화면 내 `로그인하기` 또는 `로그인` 버튼 클릭으로 로그인 복구를 시도한 뒤에도 실패할 때만 대표님께 보고한다.
 - browser 도구를 사용하는 모든 작업은 예외 없이 `scripts/browser-mcp/browser-ensure-ready.sh`를 선행한 뒤에만 진행한다.
 - 브라우저 사용이 가능한 업무에서 browser 도구를 먼저 시도하지 않고 `web_search`/`web_fetch`로 우회하지 않는다. 예외는 대표님이 명시적으로 일반 웹검색을 요청한 경우뿐이다.
 

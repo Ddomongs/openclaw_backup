@@ -107,18 +107,22 @@
 3. 반드시 `./scripts/browser-mcp/browser-ensure-ready.sh`를 먼저 실행해 `ready` 여부를 확인한다.
 4. 연결이 살아 있으면 기존 세션을 그대로 사용한다.
 5. 연결이 끊겼거나 실제 제어가 안 될 때만 attach/복구를 시도한다.
-6. Google Chrome이 실행되어 있지 않으면, 로그인 상태를 보장할 수 없으므로 자동으로 새 브라우저를 띄워 진행하지 않는다.
-7. 이 경우 대표에게 `브라우저 실행 및 로그인 필요` 알림을 보내고, Chrome 실행 + 로그인 확인 + 추가 진행 승인을 기다린다.
-8. Chrome은 실행 중이지만 MCP attach 또는 권한 허용이 안 된 경우에는 `./scripts/browser-mcp/browser-ensure-ready.sh`로 attach 재시도 + 허용 팝업 자동 처리 + 재확인을 먼저 시도한다.
-9. 그래도 실패하면 대표에게 `Chrome MCP attach 실패`와 실패 원인을 짧게 보고하고 종료한다.
-10. attach 복구가 성공한 경우에만 이후 상품 Q&A 점검 단계로 넘어간다.
-11. attach 복구가 실패하면 실패 원인을 보고하고 종료한다.
+6. Google Chrome이 실행되어 있지 않으면 `./scripts/browser-mcp/browser-ensure-ready.sh`가 먼저 Chrome을 실행한 뒤 준비 상태를 다시 확인한다.
+7. Chrome은 실행 중이지만 MCP attach 또는 권한 허용이 안 된 경우에는 `./scripts/browser-mcp/browser-ensure-ready.sh`로 attach 재시도 + 허용 팝업 자동 처리 + 재확인을 먼저 시도한다.
+8. 그래도 실패하면 대표에게 `Chrome MCP attach 실패`와 실패 원인을 짧게 보고하고 종료한다.
+9. attach 복구가 성공한 경우에만 이후 상품 Q&A 점검 단계로 넘어간다.
+10. attach 복구가 실패하면 실패 원인을 보고하고 종료한다.
    - 점검 전 상태 확인 스크립트: `./scripts/browser-mcp/chrome-mcp-preflight.sh`
    - 브라우저 준비 보장 스크립트: `./scripts/browser-mcp/browser-ensure-ready.sh`
    - 팝업 감지/승인 모니터 스크립트: `./scripts/browser-mcp/chrome-dev-approve-monitor.sh`
    - 승인 후 attach 재시도 스크립트: `./scripts/browser-mcp/chrome-mcp-attach-approved.sh`
    - 승인 후 Q&A 점검 재개 스크립트: `./scripts/browser-mcp/qna-resume-after-approval.sh`
-11-1. 상품 Q&A 외의 다른 browser 도구 작업도 동일하게 `./scripts/browser-mcp/browser-ensure-ready.sh`를 공통 선행 단계로 사용한다.
+10-1. 상품 Q&A 외의 다른 browser 도구 작업도 동일하게 `./scripts/browser-mcp/browser-ensure-ready.sh`를 공통 선행 단계로 사용한다.
+10-2. 스마트스토어 접근 시 로그인되지 않은 상태로 보이면 로그인 복구를 먼저 시도한다.
+   - 구형 화면에서 `<span>로그인하기</span>` 버튼이 보이면 그 버튼을 클릭해 로그인 페이지로 이동한다.
+   - 변경된 로그인 화면에서 `<span>로그인</span>` 버튼이 보이고 아이디/비밀번호가 이미 채워져 있으면 해당 버튼을 클릭해 로그인 완료를 시도한다.
+   - 로그인 완료 후 스마트스토어센터 메인/문의 화면 진입이 확인되면 이후 업무를 계속 진행한다.
+   - 로그인 버튼 클릭 후에도 로그인되지 않으면 그때만 대표님께 로그인 상태를 짧게 보고한다.
 12. 답변 필터를 `미답변`으로 설정한다.
 13. `검색` 버튼 클릭
 14. 미답변 목록 추출
