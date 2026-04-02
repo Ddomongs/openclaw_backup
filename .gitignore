@@ -4,6 +4,8 @@
 # Long-term/private memory (opt-in later if desired)
 memory/
 MEMORY.md
+references/cs/CS지침-원본.md
+references/cs/CS지침2-원본.md
 
 # OS / editor noise
 .DS_Store
