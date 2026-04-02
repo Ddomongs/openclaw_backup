@@ -137,6 +137,25 @@ curl "http://127.0.0.1:3187/api/approvals?status=pending"
 curl "http://127.0.0.1:3187/api/approvals/apr_xxxxx"
 ```
 
+### 승인 상태 변경 (버튼/액션 처리용)
+```bash
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"action":"approve","actor":"kim"}' \
+  http://127.0.0.1:3187/api/approvals/apr_xxxxx/action
+```
+
+지원 action:
+- `approve`
+- `hold`
+- `revise`
+
+승인 객체 응답에는 아래도 포함됩니다.
+- `discordButtons`: Discord 버튼 UI 연결용 메타데이터
+  - `approval:apr_xxxxx:approve`
+  - `approval:apr_xxxxx:hold`
+  - `approval:apr_xxxxx:revise`
+
 ### 웹훅 테스트
 ```bash
 curl -X POST \
@@ -165,8 +184,8 @@ curl -X POST \
 - 과거 톡톡 전체 히스토리 역수집 기능은 없음
 
 ## 다음 추천 단계
-1. Discord 승인 메시지 실제 전송 연결
-2. 승인/보류/수정 상태 변경 API 추가
+1. Discord 버튼 메시지 실제 전송 연결
+2. 버튼 클릭 → `/api/approvals/:id/action` 연결
 3. 로컬 브라우저 자동화 반영 큐 연결
 4. 카드 검색 조건 확장
 5. 필요 시 SQLite 전환

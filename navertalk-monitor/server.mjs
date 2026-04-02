@@ -138,6 +138,22 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
+    if (req.method === 'POST' && url.pathname.startsWith('/api/approvals/') && url.pathname.endsWith('/action')) {
+      if (!isAuthorizedViewer(req, url)) {
+        return sendJson(res, 401, { ok: false, error: 'unauthorized_viewer' });
+      }
+
+      const approvalId = decodeURIComponent(url.pathname.slice('/api/approvals/'.length, -'/action'.length));
+      const body = await readJsonBody(req, config.maxBodyBytes);
+      const approval = await applyApprovalAction(approvalId, body);
+
+      return sendJson(res, 200, {
+        ok: true,
+        approval,
+        discordMessage: approval.discordMessage,
+      });
+    }
+
     if (req.method === 'GET' && url.pathname.startsWith('/api/approvals/')) {
       if (!isAuthorizedViewer(req, url)) {
         return sendJson(res, 401, { ok: false, error: 'unauthorized_viewer' });
@@ -835,8 +851,49 @@ function normalizeApprovalRequest(body, card, now) {
     cardSummary: card ? toCardSummary(card) : null,
   };
 
+  approval.actions = buildApprovalActions(approval);
   approval.discordMessage = buildDiscordApprovalMessage(approval);
+  approval.discordButtons = buildDiscordButtonMeta(approval);
   return approval;
+}
+
+function buildApprovalActions(approval) {
+  return [
+    {
+      key: 'approve',
+      label: '승인',
+      nextStatus: 'approved',
+      customId: `approval:${approval.approvalId}:approve`,
+      style: 'success',
+    },
+    {
+      key: 'hold',
+      label: '보류',
+      nextStatus: 'held',
+      customId: `approval:${approval.approvalId}:hold`,
+      style: 'secondary',
+    },
+    {
+      key: 'revise',
+      label: '수정요청',
+      nextStatus: 'revision_requested',
+      customId: `approval:${approval.approvalId}:revise`,
+      style: 'danger',
+    },
+  ];
+}
+
+function buildDiscordButtonMeta(approval) {
+  return {
+    type: 'discord-buttons-v1',
+    approvalId: approval.approvalId,
+    buttons: approval.actions.map((action) => ({
+      customId: action.customId,
+      label: action.label,
+      style: action.style,
+      nextStatus: action.nextStatus,
+    })),
+  };
 }
 
 function normalizeApprovalSource(value) {
@@ -944,7 +1001,8 @@ function buildDiscordApprovalMessage(approval) {
     lines.push('', '[초안]', '```text', approval.draft, '```');
   }
 
-  lines.push('', '승인 예시:', `- ${approval.approvalId} 승인`, `- ${approval.approvalId} 보류`, `- ${approval.approvalId} 수정: 마지막 문장만 더 짧게`);
+  lines.push('', '버튼 동작:', '- 승인', '- 보류', '- 수정요청');
+  lines.push('', '텍스트 승인 예시:', `- ${approval.approvalId} 승인`, `- ${approval.approvalId} 보류`, `- ${approval.approvalId} 수정: 마지막 문장만 더 짧게`);
   return lines.join('\n');
 }
 
@@ -989,6 +1047,52 @@ async function readApproval(approvalId) {
     if (error.code === 'ENOENT') return null;
     throw error;
   }
+}
+
+async function applyApprovalAction(approvalId, body) {
+  const approval = await readApproval(approvalId);
+  if (!approval) {
+    const error = new Error('approval_not_found');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const action = normalizeApprovalAction(body?.action || body?.status || '');
+  if (!action) {
+    const error = new Error('invalid_action');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  approval.status = action.nextStatus;
+  approval.updatedAt = new Date().toISOString();
+  approval.lastAction = {
+    key: action.key,
+    label: action.label,
+    at: approval.updatedAt,
+    note: String(body?.note || body?.reason || '').trim() || null,
+    actor: String(body?.actor || '').trim() || null,
+  };
+  approval.discordMessage = buildDiscordApprovalMessage(approval);
+  approval.discordButtons = buildDiscordButtonMeta(approval);
+
+  await writeApproval(approval);
+  return approval;
+}
+
+function normalizeApprovalAction(value) {
+  const text = String(value || '').trim().toLowerCase();
+  if (!text) return null;
+  const map = {
+    approve: { key: 'approve', label: '승인', nextStatus: 'approved' },
+    approved: { key: 'approve', label: '승인', nextStatus: 'approved' },
+    hold: { key: 'hold', label: '보류', nextStatus: 'held' },
+    held: { key: 'hold', label: '보류', nextStatus: 'held' },
+    revise: { key: 'revise', label: '수정요청', nextStatus: 'revision_requested' },
+    revision_requested: { key: 'revise', label: '수정요청', nextStatus: 'revision_requested' },
+    revision: { key: 'revise', label: '수정요청', nextStatus: 'revision_requested' },
+  };
+  return map[text] || null;
 }
 
 async function writeApproval(approval) {
