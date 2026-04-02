@@ -8,6 +8,7 @@
 - 고객(user) 기준 카드형 대화 이력 저장
 - 로컬 카드 뷰어(`/cards`)
 - JSON API (`/api/cards`, `/api/cards/:userId`)
+- Discord 승인 대기 메시지 포맷 생성 API (`/api/approvals`)
 
 ## 왜 이렇게 만들었나
 - 톡톡은 조회형 API보다 웹훅 기반 실시간 수신 구조에 가깝습니다.
@@ -56,6 +57,17 @@ node navertalk-monitor/server.mjs
 https://your-domain.example/webhook/navertalk?token=change-me
 ```
 
+## Chemicloud 배포 자료
+`webhook.tipoasis.com` 기준 Chemicloud/cPanel 배포 문서는 아래 파일을 참고합니다.
+
+- `navertalk-monitor/DEPLOY_CHEMICLOUD.md`
+- `navertalk-monitor/.env.chemicloud.example`
+
+압축 파일 생성:
+```bash
+./scripts/package-navertalk-monitor.sh
+```
+
 ## 저장 구조
 기본 저장 위치: `runtime-data/navertalk-monitor`
 
@@ -63,6 +75,8 @@ https://your-domain.example/webhook/navertalk?token=change-me
   - 고객별 카드형 대화 이력
 - `events/YYYY-MM-DD.ndjson`
   - 수신 raw 이벤트 로그
+- `approvals/*.json`
+  - Discord 승인 대기 요청 저장본
 - `state.json`
   - 마지막 갱신 상태
 
@@ -86,6 +100,41 @@ curl http://127.0.0.1:3187/api/cards
 ### 특정 고객 카드 조회
 ```bash
 curl "http://127.0.0.1:3187/api/cards/al-2eGuGr5WQOnco1_V-FQ"
+```
+
+### Discord 승인 대기 생성
+```bash
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "userId": "NkJGzB8YzJVorSAMaq-TJg",
+    "channel": "talktalk",
+    "inquiryType": "배송문의",
+    "customerName": "장형석",
+    "marketName": "스마트스토어",
+    "orderNo": "2026033026786761",
+    "productOrderNo": "2026033073960541",
+    "trackingNo": "303593965841",
+    "trackingStatus": "통관대기",
+    "customsEta": "04월 06일 (월)",
+    "deliveryEta": "04월 07일 (화)",
+    "draft": "안녕하세요, 고객님 😊\n..."
+  }' \
+  http://127.0.0.1:3187/api/approvals
+```
+
+응답에는 아래가 포함됩니다.
+- `approval`: 저장된 승인 요청 객체
+- `discordMessage`: Discord 보고용 완성 메시지 문자열
+
+### Discord 승인 대기 목록
+```bash
+curl "http://127.0.0.1:3187/api/approvals?status=pending"
+```
+
+### 특정 승인 대기 조회
+```bash
+curl "http://127.0.0.1:3187/api/approvals/apr_xxxxx"
 ```
 
 ### 웹훅 테스트
@@ -112,12 +161,12 @@ curl -X POST \
 ## 현재 제한사항
 - 네이버 서명 검증 로직은 아직 없음 (README 기준 명시된 범위 우선)
 - 미확인/처리완료 상태 변경 UI는 아직 없음
-- Discord 자동 알림 연동은 아직 없음
+- Discord 자동 전송 자체는 아직 없음 (현재는 Discord용 메시지 문자열 생성/저장 단계)
 - 과거 톡톡 전체 히스토리 역수집 기능은 없음
 
 ## 다음 추천 단계
-1. Discord 알림 연결
-2. 미확인/처리완료 상태 추가
-3. 카드 검색 조건 확장
-4. Nginx/Caddy 뒤 배포
+1. Discord 승인 메시지 실제 전송 연결
+2. 승인/보류/수정 상태 변경 API 추가
+3. 로컬 브라우저 자동화 반영 큐 연결
+4. 카드 검색 조건 확장
 5. 필요 시 SQLite 전환
