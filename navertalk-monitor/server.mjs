@@ -154,6 +154,24 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
+    if (req.method === 'GET' && url.pathname.startsWith('/api/approvals/') && url.pathname.endsWith('/discord-payload')) {
+      if (!isAuthorizedViewer(req, url)) {
+        return sendJson(res, 401, { ok: false, error: 'unauthorized_viewer' });
+      }
+
+      const approvalId = decodeURIComponent(url.pathname.slice('/api/approvals/'.length, -'/discord-payload'.length));
+      const approval = await readApproval(approvalId);
+      if (!approval) {
+        return sendJson(res, 404, { ok: false, error: 'approval_not_found', approvalId });
+      }
+
+      return sendJson(res, 200, {
+        ok: true,
+        approvalId,
+        payload: approval.discordPayload || buildDiscordPayload(approval),
+      });
+    }
+
     if (req.method === 'GET' && url.pathname.startsWith('/api/approvals/')) {
       if (!isAuthorizedViewer(req, url)) {
         return sendJson(res, 401, { ok: false, error: 'unauthorized_viewer' });
@@ -854,6 +872,7 @@ function normalizeApprovalRequest(body, card, now) {
   approval.actions = buildApprovalActions(approval);
   approval.discordMessage = buildDiscordApprovalMessage(approval);
   approval.discordButtons = buildDiscordButtonMeta(approval);
+  approval.discordPayload = buildDiscordPayload(approval);
   return approval;
 }
 
@@ -893,6 +912,24 @@ function buildDiscordButtonMeta(approval) {
       style: action.style,
       nextStatus: action.nextStatus,
     })),
+  };
+}
+
+function buildDiscordPayload(approval) {
+  return {
+    content: approval.discordMessage,
+    components: [
+      {
+        type: 'action_row',
+        buttons: approval.actions.map((action) => ({
+          type: 'button',
+          customId: action.customId,
+          label: action.label,
+          style: action.style,
+          disabled: approval.status !== 'pending',
+        })),
+      },
+    ],
   };
 }
 
@@ -1075,6 +1112,7 @@ async function applyApprovalAction(approvalId, body) {
   };
   approval.discordMessage = buildDiscordApprovalMessage(approval);
   approval.discordButtons = buildDiscordButtonMeta(approval);
+  approval.discordPayload = buildDiscordPayload(approval);
 
   await writeApproval(approval);
   return approval;

@@ -137,6 +137,18 @@ curl "http://127.0.0.1:3187/api/approvals?status=pending"
 curl "http://127.0.0.1:3187/api/approvals/apr_xxxxx"
 ```
 
+### Discord 버튼 메시지 payload 조회
+```bash
+curl "http://127.0.0.1:3187/api/approvals/apr_xxxxx/discord-payload"
+```
+
+응답에는 아래가 포함됩니다.
+- `content`: Discord 본문 문자열
+- `components`: 버튼 UI 전송용 구조
+  - `승인`
+  - `보류`
+  - `수정요청`
+
 ### 승인 상태 변경 (버튼/액션 처리용)
 ```bash
 curl -X POST \
