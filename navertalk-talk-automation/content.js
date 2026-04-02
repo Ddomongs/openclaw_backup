@@ -18,7 +18,7 @@
     matchResults: [],
     popupDetail: null,
     popupLinkedCard: null,
-    lastApproval: null,
+    localApprovalPreview: null,
     loading: false,
     lastMessage: '대기 중',
   };
@@ -189,8 +189,8 @@
         await navigator.clipboard.writeText(text);
         state.lastMessage = 'CS 초안을 복사했습니다.';
       }
-      if (action === 'create-approval') {
-        await createDiscordApprovalDraft();
+      if (action === 'create-approval-preview') {
+        await createLocalApprovalPreview();
       }
       if (action === 'refresh-popup') {
         state.popupDetail = extractPopupDetail();
@@ -435,7 +435,7 @@
     };
   }
 
-  async function createDiscordApprovalDraft() {
+  async function createLocalApprovalPreview() {
     const detail = state.popupDetail || extractPopupDetail();
     if (!detail) throw new Error('팝업 정보가 없습니다.');
 
@@ -449,23 +449,73 @@
     }
 
     const inquiryType = classifyPopupInquiryType(detail);
-    const approval = await apiFetch('/api/approvals', {
-      method: 'POST',
-      body: {
-        source: 'navertalk-talk-automation',
-        channel: 'talktalk',
-        inquiryType,
-        userId: linkedUserId,
-        customerName: detail.customerName,
-        productName: detail.productTitle,
-        orderNo: detail.orderNo,
-        trackingNo: detail.trackingNo,
-        draft: detail.draft,
-      },
+    const preview = buildLocalApprovalPreview({
+      detail,
+      linkedUserId,
+      inquiryType,
+      recentMessages: buildRecentMessagesFromPopup(detail),
     });
 
-    state.lastApproval = approval?.approval || null;
-    state.lastMessage = `Discord 승인 카드 초안을 생성했습니다: ${approval?.approval?.approvalId || 'unknown'}`;
+    state.localApprovalPreview = preview;
+    await navigator.clipboard.writeText(preview.discordMessage);
+    state.lastMessage = `로컬 승인 카드 미리보기를 만들고 복사했습니다: ${preview.approvalId}`;
+  }
+
+  function buildLocalApprovalPreview({ detail, linkedUserId, inquiryType, recentMessages }) {
+    const approvalId = `local_apr_${Date.now().toString(36)}`;
+    const preview = {
+      approvalId,
+      source: 'local-popup-preview',
+      channel: 'talktalk',
+      inquiryType,
+      userId: linkedUserId,
+      customerName: detail.customerName || '',
+      productName: detail.productTitle || '',
+      orderNo: detail.orderNo || '',
+      trackingNo: detail.trackingNo || '',
+      draft: detail.draft || '',
+      recentMessages,
+    };
+
+    preview.discordMessage = buildDiscordApprovalPreviewText(preview);
+    preview.discordButtons = [
+      { customId: `approval:${approvalId}:approve`, label: '승인', style: 'success' },
+      { customId: `approval:${approvalId}:hold`, label: '보류', style: 'secondary' },
+      { customId: `approval:${approvalId}:revise`, label: '수정요청', style: 'danger' },
+    ];
+    return preview;
+  }
+
+  function buildRecentMessagesFromPopup(detail) {
+    const items = [];
+    if (detail.lastCustomerMessage) {
+      items.push({ label: '고객', text: detail.lastCustomerMessage });
+    }
+    return items;
+  }
+
+  function buildDiscordApprovalPreviewText(preview) {
+    const lines = [
+      `[${preview.approvalId}] 톡톡 / ${preview.inquiryType} / ${preview.customerName || '고객명 미확인'}`,
+    ];
+    if (preview.productName) lines.push(`상품: ${preview.productName}`);
+    if (preview.orderNo) lines.push(`주문번호: ${preview.orderNo}`);
+    if (preview.trackingNo) lines.push(`송장번호: ${preview.trackingNo}`);
+    lines.push(`연결 userId: ${preview.userId}`);
+
+    if (preview.recentMessages?.length) {
+      lines.push('', '[최근 대화]');
+      for (const item of preview.recentMessages) {
+        lines.push(`- ${item.label} ${item.text}`);
+      }
+    }
+
+    if (preview.draft) {
+      lines.push('', '[초안]', '```text', preview.draft, '```');
+    }
+
+    lines.push('', '버튼:', '승인 / 보류 / 수정요청');
+    return lines.join('\n');
   }
 
   function classifyPopupInquiryType(detail) {
@@ -644,7 +694,7 @@
         <div class="small-btns">
           <button data-action="refresh-popup">새로 읽기</button>
           <button class="good" data-action="copy-draft">초안 복사</button>
-          <button class="warn" data-action="create-approval">승인 카드 생성</button>
+          <button class="warn" data-action="create-approval-preview">승인 카드 미리보기</button>
         </div>
         <div class="item-line">${escapeHtml(state.lastMessage)}</div>
       </div>
@@ -664,12 +714,17 @@
         ${renderDetailLine('송장번호', detail.trackingNo)}
         ${renderDetailLine('최근 고객메시지', detail.lastCustomerMessage)}
         ${renderDetailLine('연결 userId', detail.userId || state.popupLinkedCard?.userId)}
-        ${renderDetailLine('최근 승인카드', state.lastApproval?.approvalId)}
+        ${renderDetailLine('최근 로컬 승인카드', state.localApprovalPreview?.approvalId)}
       </div>
 
       <div class="section stack">
         <h3>CS 초안</h3>
         <textarea data-draft="custom">${escapeHtml(detail.draft || '')}</textarea>
+      </div>
+
+      <div class="section stack">
+        <h3>로컬 승인 카드 미리보기</h3>
+        <textarea readonly>${escapeHtml(state.localApprovalPreview?.discordMessage || '')}</textarea>
       </div>
     `;
   }

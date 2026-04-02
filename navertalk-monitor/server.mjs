@@ -113,107 +113,6 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
-    if (req.method === 'GET' && url.pathname === '/api/approvals') {
-      if (!isAuthorizedViewer(req, url)) {
-        return sendJson(res, 401, { ok: false, error: 'unauthorized_viewer' });
-      }
-
-      const status = (url.searchParams.get('status') || '').trim();
-      const items = await listApprovals({ status });
-      return sendJson(res, 200, { ok: true, count: items.length, approvals: items });
-    }
-
-    if (req.method === 'POST' && url.pathname === '/api/approvals') {
-      if (!isAuthorizedViewer(req, url)) {
-        return sendJson(res, 401, { ok: false, error: 'unauthorized_viewer' });
-      }
-
-      const body = await readJsonBody(req, config.maxBodyBytes);
-      const approval = await createApprovalRequest(body);
-
-      return sendJson(res, 200, {
-        ok: true,
-        approval,
-        discordMessage: approval.discordMessage,
-      });
-    }
-
-    if (req.method === 'POST' && url.pathname === '/api/approvals/parse-command') {
-      if (!isAuthorizedViewer(req, url)) {
-        return sendJson(res, 401, { ok: false, error: 'unauthorized_viewer' });
-      }
-
-      const body = await readJsonBody(req, config.maxBodyBytes);
-      const parsed = parseApprovalCommand(body?.text || body?.message || '');
-      if (!parsed) {
-        return sendJson(res, 400, { ok: false, error: 'invalid_command' });
-      }
-
-      const approval = await applyApprovalAction(parsed.approvalId, {
-        action: parsed.action,
-        note: parsed.note,
-        actor: body?.actor || null,
-      });
-
-      return sendJson(res, 200, {
-        ok: true,
-        parsed,
-        approval,
-        discordMessage: approval.discordMessage,
-      });
-    }
-
-    if (req.method === 'POST' && url.pathname.startsWith('/api/approvals/') && url.pathname.endsWith('/action')) {
-      if (!isAuthorizedViewer(req, url)) {
-        return sendJson(res, 401, { ok: false, error: 'unauthorized_viewer' });
-      }
-
-      const approvalId = decodeURIComponent(url.pathname.slice('/api/approvals/'.length, -'/action'.length));
-      const body = await readJsonBody(req, config.maxBodyBytes);
-      const approval = await applyApprovalAction(approvalId, body);
-
-      return sendJson(res, 200, {
-        ok: true,
-        approval,
-        discordMessage: approval.discordMessage,
-      });
-    }
-
-    if (req.method === 'GET' && url.pathname.startsWith('/api/approvals/') && url.pathname.endsWith('/discord-payload')) {
-      if (!isAuthorizedViewer(req, url)) {
-        return sendJson(res, 401, { ok: false, error: 'unauthorized_viewer' });
-      }
-
-      const approvalId = decodeURIComponent(url.pathname.slice('/api/approvals/'.length, -'/discord-payload'.length));
-      const approval = await readApproval(approvalId);
-      if (!approval) {
-        return sendJson(res, 404, { ok: false, error: 'approval_not_found', approvalId });
-      }
-
-      return sendJson(res, 200, {
-        ok: true,
-        approvalId,
-        payload: approval.discordPayload || buildDiscordPayload(approval),
-      });
-    }
-
-    if (req.method === 'GET' && url.pathname.startsWith('/api/approvals/')) {
-      if (!isAuthorizedViewer(req, url)) {
-        return sendJson(res, 401, { ok: false, error: 'unauthorized_viewer' });
-      }
-
-      const approvalId = decodeURIComponent(url.pathname.slice('/api/approvals/'.length));
-      const approval = await readApproval(approvalId);
-      if (!approval) {
-        return sendJson(res, 404, { ok: false, error: 'approval_not_found', approvalId });
-      }
-
-      return sendJson(res, 200, {
-        ok: true,
-        approval,
-        discordMessage: approval.discordMessage,
-      });
-    }
 
     if (req.method === 'POST' && url.pathname === '/api/match/score') {
       if (!isAuthorizedViewer(req, url)) {
@@ -892,6 +791,7 @@ function normalizeApprovalRequest(body, card, now) {
     recentMessages,
     draft: String(body?.draft || '').trim(),
     cardSummary: card ? toCardSummary(card) : null,
+    meta: body?.meta && typeof body.meta === 'object' ? body.meta : {},
   };
 
   approval.actions = buildApprovalActions(approval);
@@ -1063,12 +963,25 @@ function buildDiscordApprovalMessage(approval) {
     lines.push('', '[초안]', '```text', approval.draft, '```');
   }
 
+  if (approval?.meta?.autoDetected) {
+    lines.push('', `자동감지: ${approval.meta.autoDetectedReason || 'webhook auto'}`);
+  }
+
   lines.push('', '버튼 동작:', '- 승인', '- 보류', '- 수정요청');
   lines.push('', '텍스트 승인 예시:', `- ${approval.approvalId} 승인`, `- ${approval.approvalId} 보류`, `- ${approval.approvalId} 수정: 마지막 문장만 더 짧게`);
   return lines.join('\n');
 }
 
 async function listApprovals({ status } = {}) {
+  const items = [];
+  for (const item of await readAllApprovals()) {
+    if (status && item.status !== status) continue;
+    items.push(toApprovalSummary(item));
+  }
+  return items.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+}
+
+async function readAllApprovals() {
   const entries = await fs.readdir(paths.approvals);
   const items = [];
   for (const entry of entries) {
@@ -1076,11 +989,9 @@ async function listApprovals({ status } = {}) {
     const raw = await fs.readFile(path.join(paths.approvals, entry), 'utf8');
     const parsed = safeJsonParse(raw, entry);
     if (!parsed.ok) continue;
-    const item = parsed.data;
-    if (status && item.status !== status) continue;
-    items.push(toApprovalSummary(item));
+    items.push(parsed.data);
   }
-  return items.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+  return items;
 }
 
 function toApprovalSummary(item) {
@@ -1203,6 +1114,143 @@ function parseApprovalCommand(value) {
   }
 
   return null;
+}
+
+async function autoCreateApprovalFromCardUser(userId) {
+  if (!userId) return null;
+  const card = await readCard(String(userId));
+  if (!card) return null;
+  return autoCreateApprovalFromCard(card);
+}
+
+async function scanCardsForAutoApprovals({ limit = 20 } = {}) {
+  const entries = await fs.readdir(paths.cards);
+  const cards = [];
+  for (const entry of entries) {
+    if (!entry.endsWith('.json')) continue;
+    const raw = await fs.readFile(path.join(paths.cards, entry), 'utf8');
+    const parsed = safeJsonParse(raw, entry);
+    if (!parsed.ok) continue;
+    cards.push(parsed.data);
+  }
+
+  cards.sort((a, b) => String(b.lastSeenAt).localeCompare(String(a.lastSeenAt)));
+  const created = [];
+  const skipped = [];
+  for (const card of cards.slice(0, Number(limit) || 20)) {
+    const result = await autoCreateApprovalFromCard(card);
+    if (result?.created) created.push(result.approvalId);
+    else skipped.push({ userId: card.userId, reason: result?.reason || 'skipped' });
+  }
+
+  return { createdCount: created.length, createdApprovalIds: created, skipped };
+}
+
+async function autoCreateApprovalFromCard(card) {
+  const analysis = analyzeCardForAutoApproval(card);
+  if (!analysis.actionable) {
+    return { created: false, reason: analysis.reason };
+  }
+
+  const dedupeKey = createAutoApprovalDedupeKey(card);
+  const existing = await findExistingApprovalByDedupeKey(dedupeKey);
+  if (existing) {
+    return { created: false, reason: 'duplicate_auto_approval', approvalId: existing.approvalId };
+  }
+
+  const approval = await createApprovalRequest({
+    source: 'webhook-auto',
+    channel: 'talktalk',
+    inquiryType: analysis.inquiryType,
+    userId: card.userId,
+    productName: card?.productContext?.productName || null,
+    draft: buildAutoDraftFromCard(card, analysis.inquiryType),
+    recentCount: 5,
+    meta: {
+      autoDetected: true,
+      autoDetectedReason: analysis.reason,
+      dedupeKey,
+      cardLastSeenAt: card.lastSeenAt,
+      cardLastMessageText: card.lastMessageText || '',
+    },
+  });
+
+  return { created: true, approvalId: approval.approvalId };
+}
+
+function analyzeCardForAutoApproval(card) {
+  if (!card) return { actionable: false, reason: 'card_not_found' };
+  if (card.lastDirection !== 'incoming') return { actionable: false, reason: 'last_message_not_incoming' };
+  if (!String(card.lastMessageText || '').trim()) return { actionable: false, reason: 'empty_last_message' };
+
+  const lastIncoming = getLastMessageByDirection(card, 'incoming');
+  if (!lastIncoming?.text) return { actionable: false, reason: 'no_incoming_text' };
+  if (isTerminalReplyText(lastIncoming.text)) return { actionable: false, reason: 'terminal_reply' };
+
+  return {
+    actionable: true,
+    reason: 'incoming_actionable_message',
+    inquiryType: inferInquiryTypeFromText(lastIncoming.text),
+  };
+}
+
+function getLastMessageByDirection(card, direction) {
+  const list = Array.isArray(card?.messages) ? card.messages : [];
+  for (let i = list.length - 1; i >= 0; i -= 1) {
+    if (list[i]?.direction === direction) return list[i];
+  }
+  return null;
+}
+
+function isTerminalReplyText(value) {
+  const text = String(value || '').trim();
+  if (!text) return false;
+  if (/[?？]$/.test(text)) return false;
+  return /^(감사|감사합니다|감사합니당|고맙습니다|넵|네|네네|넹|확인|확인했습니다|알겠습니다|오케이|ok|감사해요|감사드려요)[!~. ]*$/i.test(text);
+}
+
+function inferInquiryTypeFromText(value) {
+  const text = String(value || '').trim();
+  if (/배송|도착|언제|얼마만에|소요|받을/.test(text)) return '배송문의';
+  if (/환불|반품|교환|취소/.test(text)) return '취소/교환/반품';
+  if (/사이즈|옵션|색상|재고|품절/.test(text)) return '옵션/재고 문의';
+  if (/통관|세관|개인통관|유니패스/.test(text)) return '통관문의';
+  if (/불량|고장|안되|이상|문제/.test(text)) return '불량/사용문의';
+  return '일반문의';
+}
+
+function buildAutoDraftFromCard(card, inquiryType) {
+  const product = card?.productContext?.productName || '문의 상품';
+  if (inquiryType === '배송문의') {
+    return `안녕하세요 🙂\n문의주신 "${product}" 상품은 해외직구 상품으로 일반적으로 영업일 기준 7~15일 정도 소요됩니다.\n다만 주문 시점 재고나 현지/통관 상황에 따라 변동될 수 있어, 상세 상태 확인 후 더 정확히 안내드리겠습니다.`;
+  }
+  if (inquiryType === '취소/교환/반품') {
+    return `안녕하세요 🙂\n문의주신 "${product}" 관련 요청은 주문 상태를 먼저 확인한 뒤 정확히 안내드리겠습니다.\n조금만 기다려주시면 확인 후 다시 말씀드리겠습니다.`;
+  }
+  if (inquiryType === '옵션/재고 문의') {
+    return `안녕하세요 🙂\n문의주신 "${product}" 상품의 옵션 및 재고 여부는 확인 후 안내드리겠습니다.\n확인되는 대로 다시 말씀드리겠습니다.`;
+  }
+  if (inquiryType === '통관문의') {
+    return `안녕하세요 🙂\n문의주신 "${product}" 관련 통관 상태는 확인 후 안내드리겠습니다.\n필요 시 유니패스 기준으로도 함께 확인해보겠습니다.`;
+  }
+  if (inquiryType === '불량/사용문의') {
+    return `안녕하세요 🙂\n문의주신 "${product}" 관련 불편 사항은 증상 확인 후 안내드리겠습니다.\n사용하신 환경과 증상을 조금 더 확인해주시면 빠르게 도와드리겠습니다.`;
+  }
+  return `안녕하세요 🙂\n문의주신 "${product}" 관련 내용은 확인 후 안내드리겠습니다.\n조금만 기다려주시면 확인 뒤 다시 말씀드리겠습니다.`;
+}
+
+function createAutoApprovalDedupeKey(card) {
+  return sha1(JSON.stringify({
+    userId: card?.userId || null,
+    lastSeenAt: card?.lastSeenAt || null,
+    lastMessageText: card?.lastMessageText || null,
+  }));
+}
+
+async function findExistingApprovalByDedupeKey(dedupeKey) {
+  if (!dedupeKey) return null;
+  const approvals = await readAllApprovals();
+  return approvals.find((item) => item?.meta?.dedupeKey === dedupeKey) || null;
 }
 
 async function writeApproval(approval) {
