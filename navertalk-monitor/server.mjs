@@ -89,6 +89,30 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, { ok: true, count: filtered.length, cards: filtered, warnings });
     }
 
+    if (req.method === 'GET' && url.pathname === '/api/cards/by-popup') {
+      if (!isAuthorizedViewer(req, url)) {
+        return sendJson(res, 401, { ok: false, error: 'unauthorized_viewer' });
+      }
+
+      const popupPath = String(url.searchParams.get('popupPath') || '').trim();
+      const popupUrl = String(url.searchParams.get('popupUrl') || '').trim();
+      if (!popupPath && !popupUrl) {
+        return sendJson(res, 400, { ok: false, error: 'popup_path_required' });
+      }
+
+      const matched = await findCardByPopupMapping({ popupPath, popupUrl });
+      if (!matched) {
+        return sendJson(res, 404, { ok: false, error: 'card_not_found_for_popup', popupPath, popupUrl });
+      }
+
+      return sendJson(res, 200, {
+        ok: true,
+        card: matched.card,
+        cardSummary: toCardSummary(matched.card),
+        mapping: matched.mapping,
+      });
+    }
+
     if (req.method === 'GET' && url.pathname === '/api/approvals') {
       if (!isAuthorizedViewer(req, url)) {
         return sendJson(res, 401, { ok: false, error: 'unauthorized_viewer' });
@@ -671,6 +695,39 @@ async function listCards() {
     cards: cards.sort((a, b) => String(b.lastSeenAt).localeCompare(String(a.lastSeenAt))),
     warnings,
   };
+}
+
+async function findCardByPopupMapping({ popupPath, popupUrl }) {
+  const normalizedPopupPath = popupPath ? extractPopupPath(popupPath) || popupPath : null;
+  const normalizedPopupUrl = popupUrl || (normalizedPopupPath ? `https://partner.talk.naver.com${normalizedPopupPath}` : null);
+  const entries = await fs.readdir(paths.cards);
+
+  for (const entry of entries) {
+    if (!entry.endsWith('.json')) continue;
+    const raw = await fs.readFile(path.join(paths.cards, entry), 'utf8');
+    const parsed = safeJsonParse(raw, entry);
+    if (!parsed.ok) continue;
+    const card = parsed.data;
+    const mappings = [
+      card?.meta?.preferredChatMapping,
+      ...(Array.isArray(card?.meta?.chatMappings) ? card.meta.chatMappings : []),
+    ].filter(Boolean);
+
+    const matchedMapping = mappings.find((mapping) => {
+      const mappingPath = mapping.popupPath ? extractPopupPath(mapping.popupPath) || mapping.popupPath : null;
+      const mappingUrl = mapping.popupUrl || (mappingPath ? `https://partner.talk.naver.com${mappingPath}` : null);
+      return Boolean(
+        (normalizedPopupPath && mappingPath && normalizedPopupPath === mappingPath)
+        || (normalizedPopupUrl && mappingUrl && normalizedPopupUrl === mappingUrl)
+      );
+    });
+
+    if (matchedMapping) {
+      return { card, mapping: matchedMapping };
+    }
+  }
+
+  return null;
 }
 
 function toCardSummary(card) {
