@@ -138,6 +138,31 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
+    if (req.method === 'POST' && url.pathname === '/api/approvals/parse-command') {
+      if (!isAuthorizedViewer(req, url)) {
+        return sendJson(res, 401, { ok: false, error: 'unauthorized_viewer' });
+      }
+
+      const body = await readJsonBody(req, config.maxBodyBytes);
+      const parsed = parseApprovalCommand(body?.text || body?.message || '');
+      if (!parsed) {
+        return sendJson(res, 400, { ok: false, error: 'invalid_command' });
+      }
+
+      const approval = await applyApprovalAction(parsed.approvalId, {
+        action: parsed.action,
+        note: parsed.note,
+        actor: body?.actor || null,
+      });
+
+      return sendJson(res, 200, {
+        ok: true,
+        parsed,
+        approval,
+        discordMessage: approval.discordMessage,
+      });
+    }
+
     if (req.method === 'POST' && url.pathname.startsWith('/api/approvals/') && url.pathname.endsWith('/action')) {
       if (!isAuthorizedViewer(req, url)) {
         return sendJson(res, 401, { ok: false, error: 'unauthorized_viewer' });
@@ -1131,6 +1156,53 @@ function normalizeApprovalAction(value) {
     revision: { key: 'revise', label: '수정요청', nextStatus: 'revision_requested' },
   };
   return map[text] || null;
+}
+
+function parseApprovalCommand(value) {
+  const text = String(value || '').trim();
+  if (!text) return null;
+
+  const approveMatch = text.match(/(apr_[A-Za-z0-9]+)\s*승인/i);
+  if (approveMatch) {
+    return {
+      approvalId: approveMatch[1],
+      action: 'approve',
+      note: null,
+      raw: text,
+    };
+  }
+
+  const holdMatch = text.match(/(apr_[A-Za-z0-9]+)\s*보류/i);
+  if (holdMatch) {
+    return {
+      approvalId: holdMatch[1],
+      action: 'hold',
+      note: null,
+      raw: text,
+    };
+  }
+
+  const reviseMatch = text.match(/(apr_[A-Za-z0-9]+)\s*수정\s*:\s*(.+)$/i);
+  if (reviseMatch) {
+    return {
+      approvalId: reviseMatch[1],
+      action: 'revise',
+      note: reviseMatch[2].trim() || null,
+      raw: text,
+    };
+  }
+
+  const reviseShortMatch = text.match(/(apr_[A-Za-z0-9]+)\s*수정요청(?:\s*:\s*(.+))?$/i);
+  if (reviseShortMatch) {
+    return {
+      approvalId: reviseShortMatch[1],
+      action: 'revise',
+      note: reviseShortMatch[2]?.trim() || null,
+      raw: text,
+    };
+  }
+
+  return null;
 }
 
 async function writeApproval(approval) {

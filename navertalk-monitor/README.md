@@ -162,6 +162,19 @@ curl -X POST \
 - `hold`
 - `revise`
 
+### 텍스트 승인 명령 파싱
+```bash
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"text":"apr_xxxxx 승인","actor":"kim"}' \
+  http://127.0.0.1:3187/api/approvals/parse-command
+```
+
+예시:
+- `apr_xxxxx 승인`
+- `apr_xxxxx 보류`
+- `apr_xxxxx 수정: 마지막 문장만 더 짧게`
+
 승인 객체 응답에는 아래도 포함됩니다.
 - `discordButtons`: Discord 버튼 UI 연결용 메타데이터
   - `approval:apr_xxxxx:approve`
