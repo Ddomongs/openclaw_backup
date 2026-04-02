@@ -7,8 +7,10 @@ const baseUrl = (process.env.NAVERTALK_MONITOR_BASE_URL || 'https://webhook.tipo
 const viewerToken = process.env.NAVERTALK_VIEWER_TOKEN || '';
 const limit = Number(process.env.NAVERTALK_APPROVAL_SCAN_LIMIT || 20);
 const outputDir = process.env.NAVERTALK_LOCAL_APPROVAL_DIR || path.join(process.cwd(), 'runtime-data', 'local-cs-approvals');
+const enrichmentsPath = process.env.NAVERTALK_LOCAL_ENRICHMENTS_FILE || path.join(process.cwd(), 'runtime-data', 'local-cs-enrichments.json');
 
 await fs.mkdir(outputDir, { recursive: true });
+const enrichments = await readEnrichments();
 
 const cardsResponse = await apiFetch('/api/cards');
 const cards = Array.isArray(cardsResponse.cards) ? cardsResponse.cards.slice(0, limit) : [];
@@ -36,7 +38,7 @@ for (const summary of cards) {
     continue;
   }
 
-  const approval = buildLocalApproval(card, analysis, dedupeKey);
+  const approval = buildLocalApproval(card, analysis, dedupeKey, enrichments[card.userId] || null);
   await fs.writeFile(path.join(outputDir, `${approval.approvalId}.json`), JSON.stringify(approval, null, 2), 'utf8');
   existing.add(dedupeKey);
   created.push({ approvalId: approval.approvalId, userId: approval.userId, inquiryType: approval.inquiryType });
@@ -81,6 +83,16 @@ async function readExistingApprovals() {
   return set;
 }
 
+async function readEnrichments() {
+  try {
+    const raw = await fs.readFile(enrichmentsPath, 'utf8');
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
 function analyzeCard(card) {
   if (!card) return { actionable: false, reason: 'card_not_found' };
   if (card.lastDirection !== 'incoming') return { actionable: false, reason: 'last_message_not_incoming' };
@@ -113,7 +125,7 @@ function inferInquiryType(value) {
   return '일반문의';
 }
 
-function buildLocalApproval(card, analysis, dedupeKey) {
+function buildLocalApproval(card, analysis, dedupeKey, enrichment = null) {
   const approvalId = `local_apr_${createHash('sha1').update(dedupeKey).digest('hex').slice(0, 10)}`;
   const recentMessages = (card.messages || [])
     .filter((item) => item.direction === 'incoming' || item.direction === 'outgoing')
@@ -127,6 +139,8 @@ function buildLocalApproval(card, analysis, dedupeKey) {
     }));
 
   const draft = buildDraft(card, analysis.inquiryType);
+  const customerName = firstNonEmpty(enrichment?.customerName, card?.meta?.customerDisplayName, card.userId);
+  const productName = firstNonEmpty(enrichment?.productName, card?.productContext?.productName, null);
   const approval = {
     approvalId,
     createdAt: new Date().toISOString(),
@@ -135,17 +149,18 @@ function buildLocalApproval(card, analysis, dedupeKey) {
     channel: 'talktalk',
     inquiryType: analysis.inquiryType,
     userId: card.userId,
-    customerName: card?.meta?.customerDisplayName || null,
-    productName: card?.productContext?.productName || null,
+    customerName,
+    productName,
     trackingNo: card?.meta?.trackingNo || null,
     recentMessages,
-    draft,
+    draft: replaceDraftProduct(draft, productName),
     discordMessage: '',
     discordPayload: null,
     meta: {
       dedupeKey,
       cardLastSeenAt: card.lastSeenAt,
       cardLastMessageText: card.lastMessageText || '',
+      enrichmentApplied: Boolean(enrichment),
     },
   };
 
@@ -160,6 +175,21 @@ function buildDraft(card, inquiryType) {
     return `안녕하세요, 또몽이네 스토어입니다 🙂\n\n문의주신 "${product}" 상품은 현재 주문 시 일반적으로 영업일 기준 7~15일 정도 소요됩니다.\n\n다만 현지 재고 상황이나 통관 진행 상황에 따라 일정은 다소 변동될 수 있는 점 참고 부탁드립니다.\n추가로 궁금하신 점 있으시면 편하게 말씀해주세요.`;
   }
   return `안녕하세요, 또몽이네 스토어입니다 🙂\n\n문의주신 "${product}" 관련 내용은 확인 후 안내드리겠습니다.\n추가로 확인되는 내용이 있으면 다시 말씀드리겠습니다.`;
+}
+
+function replaceDraftProduct(draft, productName) {
+  if (!productName) return draft;
+  return String(draft || '').replaceAll('"문의 상품"', `"${productName}"`);
+}
+
+function firstNonEmpty(...values) {
+  for (const value of values) {
+    if (value == null) continue;
+    const text = String(value).trim();
+    if (!text) continue;
+    return text;
+  }
+  return null;
 }
 
 function buildDiscordMessage(approval) {
