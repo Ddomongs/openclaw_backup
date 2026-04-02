@@ -213,11 +213,11 @@ function buildDiscordPayload(approval) {
     content: approval.discordMessage,
     components: [
       {
-        type: 'action_row',
-        buttons: [
-          { type: 'button', customId: `approval:${approval.approvalId}:approve`, label: '승인', style: 'success', disabled: false },
-          { type: 'button', customId: `approval:${approval.approvalId}:hold`, label: '보류', style: 'secondary', disabled: false },
-          { type: 'button', customId: `approval:${approval.approvalId}:revise`, label: '수정요청', style: 'danger', disabled: false },
+        type: 1,
+        components: [
+          { type: 2, custom_id: `approval:${approval.approvalId}:approve`, label: '승인', style: 3, disabled: false },
+          { type: 2, custom_id: `approval:${approval.approvalId}:hold`, label: '보류', style: 2, disabled: false },
+          { type: 2, custom_id: `approval:${approval.approvalId}:revise`, label: '수정요청', style: 4, disabled: false },
         ],
       },
     ],
