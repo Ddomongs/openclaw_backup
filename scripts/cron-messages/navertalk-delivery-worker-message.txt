@@ -1,0 +1,54 @@
+톡톡 delivery queue 처리 작업입니다.
+
+반드시 아래 순서대로 진행하세요.
+
+[1] 로컬 설정 읽기
+1. `./runtime-data/navertalk-local-config.json` 파일을 읽습니다.
+2. 아래 값을 사용합니다.
+   - `approvalChannelId`
+   - `talkUrl`
+   - `quickstarUrl`
+3. 값이 없으면 현재 세션에 짧게 실패 사유를 보고하고 종료합니다.
+
+[2] 다음 queue 건 가져오기
+1. 아래 명령을 실행합니다.
+```bash
+node ./scripts/navertalk-delivery-queue-next.mjs
+```
+2. 결과가 `found = false` 면 `NO_REPLY` 로 종료합니다.
+3. `approvalId`, `customerName`, `productName`, `draft`, `queuePath` 를 확보합니다.
+
+[3] 브라우저 준비
+1. `./scripts/browser-mcp/browser-ensure-ready.sh` 를 실행해 `ready` 확인합니다.
+2. 브라우저가 준비되지 않으면 아래 명령으로 queue 를 실패 처리합니다.
+```bash
+node ./scripts/navertalk-delivery-queue-fail.mjs <approvalId> browser_not_ready
+```
+3. 실패 처리 후 현재 세션에 짧게 보고하고 종료합니다.
+
+[4] 실제 톡톡 반영
+1. `talkUrl` 탭을 열거나 기존 탭을 재사용합니다.
+2. 고객명으로 대화를 찾고 해당 상담을 엽니다.
+3. approval 의 `draft` 를 톡톡 입력창에 넣고 전송합니다.
+4. 전송 직후 방금 보낸 메시지 말풍선 영역을 부분 캡처합니다.
+   - 저장 경로: `./runtime-data/delivery-screenshots/<approvalId>.png`
+
+[5] 완료 처리 / 완료 보고
+1. 아래 명령으로 queue 를 완료 처리합니다.
+```bash
+node ./scripts/navertalk-delivery-queue-complete.mjs <approvalId> ./runtime-data/delivery-screenshots/<approvalId>.png
+```
+2. 아래 명령으로 완료 보고 payload 를 생성합니다.
+```bash
+node ./scripts/navertalk-delivery-report-payload.mjs <approvalId> ./runtime-data/delivery-screenshots/<approvalId>.png
+```
+3. 생성된 payload 기준으로 Discord 승인 채널에 완료 보고를 보냅니다.
+   - 부분 캡처 이미지를 첨부합니다.
+4. 성공 시 최종 응답은 `NO_REPLY` 입니다.
+
+[6] 실패 처리
+1. 대화 탐색 실패 / 입력 실패 / 전송 실패 / 캡처 실패 시 아래 명령으로 queue 를 실패 처리합니다.
+```bash
+node ./scripts/navertalk-delivery-queue-fail.mjs <approvalId> <reason>
+```
+2. 그 후 현재 세션에 짧게 실패 사유를 보고합니다.

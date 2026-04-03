@@ -67,6 +67,8 @@
   - `scripts/navertalk-delivery-queue-fail.mjs`
 - delivery queue 완료 보고 payload 생성 스크립트는 `scripts/navertalk-delivery-report-payload.mjs` 를 사용한다.
 - delivery queue 실처리 절차는 `scripts/navertalk-delivery-runbook.md` 를 기준으로 한다.
+- cron worker 프롬프트는 `scripts/cron-messages/navertalk-auto-worker-message.txt`, `scripts/cron-messages/navertalk-delivery-worker-message.txt` 를 사용한다.
+- 자동 worker cron 설치는 `scripts/setup-navertalk-auto-crons.sh`, 메시지 갱신은 `scripts/update-navertalk-auto-crons.sh` 를 사용한다.
 
 ## 상품 관리
 - 상품 등록은 퍼센티(Percenty) 플랫폼을 사용한다.

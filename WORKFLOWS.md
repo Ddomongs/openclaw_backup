@@ -145,6 +145,12 @@
    - 실패: `scripts/navertalk-delivery-queue-fail.mjs`
    - 완료 보고 payload 생성: `scripts/navertalk-delivery-report-payload.mjs`
 
+### cron worker 구성
+- approval/outbox 자동 루프 프롬프트: `scripts/cron-messages/navertalk-auto-worker-message.txt`
+- delivery queue 처리 프롬프트: `scripts/cron-messages/navertalk-delivery-worker-message.txt`
+- cron 설치 스크립트: `scripts/setup-navertalk-auto-crons.sh`
+- cron 메시지 갱신 스크립트: `scripts/update-navertalk-auto-crons.sh`
+
 ### delivery queue 실제 처리 순서
 1. `navertalk-delivery-queue-next.mjs` 로 가장 오래된 `queued` 건을 `processing` 으로 가져온다.
 2. 브라우저에서 해당 고객 상담을 열고 approval 의 `draft` 를 실제 톡톡 입력창에 반영한다.
