@@ -3,8 +3,10 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 
 const cwd = process.cwd();
+const localConfigPath = path.join(cwd, 'runtime-data', 'navertalk-local-config.json');
+const localConfig = await readJson(localConfigPath);
 const approvalsDir = process.env.NAVERTALK_LOCAL_APPROVAL_DIR || path.join(cwd, 'runtime-data', 'local-cs-approvals');
-const approvalChannelId = process.env.NAVERTALK_APPROVAL_CHANNEL_ID || '1488798405860786176';
+const approvalChannelId = process.env.NAVERTALK_APPROVAL_CHANNEL_ID || localConfig?.approvalChannelId || '1488798405860786176';
 const approvalId = String(process.argv[2] || '').trim();
 const screenshotPath = String(process.argv[3] || '').trim() || null;
 const sentAt = String(process.argv[4] || '').trim() || null;

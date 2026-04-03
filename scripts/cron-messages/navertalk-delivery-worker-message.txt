@@ -13,7 +13,7 @@
 [2] 다음 queue 건 가져오기
 1. 아래 명령을 실행합니다.
 ```bash
-node ./scripts/navertalk-delivery-queue-next.mjs
+./scripts/navertalk-delivery-queue-next.mjs
 ```
 2. 결과가 `found = false` 면 `NO_REPLY` 로 종료합니다.
 3. `approvalId`, `customerName`, `productName`, `draft`, `queuePath` 를 확보합니다.
@@ -22,7 +22,7 @@ node ./scripts/navertalk-delivery-queue-next.mjs
 1. `./scripts/browser-mcp/browser-ensure-ready.sh` 를 실행해 `ready` 확인합니다.
 2. 브라우저가 준비되지 않으면 아래 명령으로 queue 를 실패 처리합니다.
 ```bash
-node ./scripts/navertalk-delivery-queue-fail.mjs <approvalId> browser_not_ready
+./scripts/navertalk-delivery-queue-fail.mjs <approvalId> browser_not_ready
 ```
 3. 실패 처리 후 현재 세션에 짧게 보고하고 종료합니다.
 
@@ -36,11 +36,11 @@ node ./scripts/navertalk-delivery-queue-fail.mjs <approvalId> browser_not_ready
 [5] 완료 처리 / 완료 보고
 1. 아래 명령으로 queue 를 완료 처리합니다.
 ```bash
-node ./scripts/navertalk-delivery-queue-complete.mjs <approvalId> ./runtime-data/delivery-screenshots/<approvalId>.png
+./scripts/navertalk-delivery-queue-complete.mjs <approvalId> ./runtime-data/delivery-screenshots/<approvalId>.png
 ```
 2. 아래 명령으로 완료 보고 payload 를 생성합니다.
 ```bash
-node ./scripts/navertalk-delivery-report-payload.mjs <approvalId> ./runtime-data/delivery-screenshots/<approvalId>.png
+./scripts/navertalk-delivery-report-payload.mjs <approvalId> ./runtime-data/delivery-screenshots/<approvalId>.png
 ```
 3. 생성된 payload 기준으로 Discord 승인 채널에 완료 보고를 보냅니다.
    - 부분 캡처 이미지를 첨부합니다.
@@ -49,6 +49,6 @@ node ./scripts/navertalk-delivery-report-payload.mjs <approvalId> ./runtime-data
 [6] 실패 처리
 1. 대화 탐색 실패 / 입력 실패 / 전송 실패 / 캡처 실패 시 아래 명령으로 queue 를 실패 처리합니다.
 ```bash
-node ./scripts/navertalk-delivery-queue-fail.mjs <approvalId> <reason>
+./scripts/navertalk-delivery-queue-fail.mjs <approvalId> <reason>
 ```
 2. 그 후 현재 세션에 짧게 실패 사유를 보고합니다.

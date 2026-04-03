@@ -13,7 +13,7 @@
 [2] approval / outbox 생성
 1. 아래 명령을 실행합니다.
 ```bash
-NAVERTALK_VIEWER_TOKEN="<viewerToken>" NAVERTALK_APPROVAL_CHANNEL_ID="<approvalChannelId>" node ./scripts/navertalk-auto-loop.mjs
+./scripts/navertalk-auto-loop.mjs
 ```
 2. 실행 결과를 읽고 아래를 확인합니다.
    - `createdCount`
@@ -31,11 +31,11 @@ NAVERTALK_VIEWER_TOKEN="<viewerToken>" NAVERTALK_APPROVAL_CHANNEL_ID="<approvalC
    - 버튼 UI 포함
 6. 발송 성공 시 아래 명령으로 상태를 `sent` 로 갱신합니다.
 ```bash
-node ./scripts/navertalk-outbox-mark-sent.mjs <approvalId> sent <messageId> <approvalChannelId>
+./scripts/navertalk-outbox-mark-sent.mjs <approvalId> sent <messageId> <approvalChannelId>
 ```
 7. 발송 실패 시 아래 명령으로 상태를 `failed` 로 남깁니다.
 ```bash
-node ./scripts/navertalk-outbox-mark-sent.mjs <approvalId> failed
+./scripts/navertalk-outbox-mark-sent.mjs <approvalId> failed
 ```
 
 [4] 응답 규칙
