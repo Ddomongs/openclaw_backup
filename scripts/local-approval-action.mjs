@@ -1,9 +1,15 @@
 #!/usr/bin/env node
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+
+const execFileAsync = promisify(execFile);
 
 const approvalsDir = process.env.NAVERTALK_LOCAL_APPROVAL_DIR || path.join(process.cwd(), 'runtime-data', 'local-cs-approvals');
 const queueDir = process.env.NAVERTALK_LOCAL_QUEUE_DIR || path.join(process.cwd(), 'runtime-data', 'local-cs-delivery-queue');
+const openclawBin = process.env.OPENCLAW_BIN || 'openclaw';
+const deliveryCronId = process.env.NAVERTALK_DELIVERY_CRON_ID || 'c5e5ca0e-b2ee-4dcc-93bc-f9f94a1d8ad8';
 const shortCode = String(process.argv[2] || '').trim();
 const action = String(process.argv[3] || '').trim().toLowerCase();
 const actor = String(process.argv[4] || '대표님').trim();
@@ -89,6 +95,10 @@ if (approval.status === 'approved') {
 disableButtons(approval);
 await fs.writeFile(targetPath, JSON.stringify(approval, null, 2), 'utf8');
 
+const deliveryTrigger = approval.status === 'approved'
+  ? await triggerDeliveryWorker()
+  : { attempted: false, reason: 'status_not_approved' };
+
 console.log(JSON.stringify({
   ok: true,
   approvalId: approval.approvalId,
@@ -104,6 +114,7 @@ console.log(JSON.stringify({
   queueState: approval.queue?.state || null,
   queuePath,
   nextStep: approval.status === 'approved' ? 'queue_for_talktalk_delivery' : 'stop',
+  deliveryTrigger,
 }, null, 2));
 
 function deriveShortCode(approvalId) {
@@ -132,5 +143,31 @@ function disableButtons(approval) {
     for (const button of buttons) {
       button.disabled = true;
     }
+  }
+}
+
+async function triggerDeliveryWorker() {
+  try {
+    const { stdout, stderr } = await execFileAsync(openclawBin, ['cron', 'run', deliveryCronId], {
+      cwd: process.cwd(),
+      env: process.env,
+      timeout: 30000,
+    });
+    return {
+      attempted: true,
+      ok: true,
+      cronId: deliveryCronId,
+      stdout: String(stdout || '').trim() || null,
+      stderr: String(stderr || '').trim() || null,
+    };
+  } catch (error) {
+    return {
+      attempted: true,
+      ok: false,
+      cronId: deliveryCronId,
+      error: error?.message || 'cron_run_failed',
+      stdout: String(error?.stdout || '').trim() || null,
+      stderr: String(error?.stderr || '').trim() || null,
+    };
   }
 }
