@@ -3,9 +3,12 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 
 const cwd = process.cwd();
+const localConfigPath = path.join(cwd, 'runtime-data', 'navertalk-local-config.json');
+const localConfig = await readJson(localConfigPath);
 const approvalsDir = process.env.NAVERTALK_LOCAL_APPROVAL_DIR || path.join(cwd, 'runtime-data', 'local-cs-approvals');
 const outboxDir = process.env.NAVERTALK_LOCAL_OUTBOX_DIR || path.join(cwd, 'runtime-data', 'local-cs-discord-outbox');
-const approvalChannelId = process.env.NAVERTALK_APPROVAL_CHANNEL_ID || '1488798405860786176';
+const approvalChannelId = process.env.NAVERTALK_APPROVAL_CHANNEL_ID || localConfig?.approvalChannelId || '1488798405860786176';
+const talkBaseUrl = String(process.env.NAVERTALK_TALK_URL || localConfig?.talkUrl || '').trim();
 
 await fs.mkdir(approvalsDir, { recursive: true });
 await fs.mkdir(outboxDir, { recursive: true });
@@ -119,6 +122,7 @@ function buildSendRequest(approval, channelId) {
 }
 
 function buildApprovalCardText(approval) {
+  const talkLink = buildTalkLink(approval);
   const lines = [
     `[${approval.approvalId}] 톡톡 / ${approval.inquiryType} / ${approval.customerName || approval.userId}`,
     `승인코드: ${approval.shortCode}`,
@@ -129,6 +133,7 @@ function buildApprovalCardText(approval) {
   if (approval.meta?.courier) lines.push(`택배사: ${approval.meta.courier}`);
   if (approval.trackingNo) lines.push(`송장번호: ${approval.trackingNo}`);
   if (approval.meta?.shippingStatusCheck) lines.push(`현재확인: ${approval.meta.shippingStatusCheck}`);
+  if (talkLink) lines.push(`톡톡 바로가기: <${talkLink}>`);
   if (Array.isArray(approval.recentMessages) && approval.recentMessages.length) {
     lines.push('', '[최근 대화]');
     for (const item of approval.recentMessages) {
@@ -136,9 +141,38 @@ function buildApprovalCardText(approval) {
     }
   }
   if (approval.draft) {
-    lines.push('', '[초안]', approval.draft);
+    lines.push('', '[초안]', '```text', approval.draft, '```');
   }
   return lines.join('\n');
+}
+
+function buildTalkLink(approval) {
+  const meta = approval?.meta || {};
+  const preferredChatMapping = meta.preferredChatMapping || null;
+  return firstNonEmpty(
+    approval?.talkLink,
+    preferredChatMapping?.popupUrl,
+    normalizePopupPath(preferredChatMapping?.popupPath),
+    talkBaseUrl,
+  );
+}
+
+function normalizePopupPath(value) {
+  const text = String(value || '').trim();
+  if (!text) return null;
+  if (text.startsWith('http://') || text.startsWith('https://')) return text;
+  if (text.startsWith('/')) return `https://partner.talk.naver.com${text}`;
+  return `https://partner.talk.naver.com/${text.replace(/^\/+/, '')}`;
+}
+
+function firstNonEmpty(...values) {
+  for (const value of values) {
+    if (value == null) continue;
+    const text = String(value).trim();
+    if (!text) continue;
+    return text;
+  }
+  return null;
 }
 
 async function readJson(filePath) {

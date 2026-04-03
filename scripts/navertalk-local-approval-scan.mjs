@@ -4,6 +4,9 @@ import path from 'node:path';
 import { createHash } from 'node:crypto';
 
 const baseUrl = (process.env.NAVERTALK_MONITOR_BASE_URL || 'https://webhook.tipoasis.com').replace(/\/$/, '');
+const localConfigPath = path.join(process.cwd(), 'runtime-data', 'navertalk-local-config.json');
+const localConfig = await readJson(localConfigPath);
+const talkBaseUrl = String(process.env.NAVERTALK_TALK_URL || localConfig?.talkUrl || '').trim();
 const viewerToken = process.env.NAVERTALK_VIEWER_TOKEN || '';
 const limit = Number(process.env.NAVERTALK_APPROVAL_SCAN_LIMIT || 20);
 const outputDir = process.env.NAVERTALK_LOCAL_APPROVAL_DIR || path.join(process.cwd(), 'runtime-data', 'local-cs-approvals');
@@ -154,6 +157,7 @@ function buildLocalApproval(card, analysis, dedupeKey, enrichment = null) {
     customerName,
     productName,
     trackingNo: card?.meta?.trackingNo || null,
+    talkLink: buildTalkLink(card, talkBaseUrl),
     recentMessages,
     draft: replaceDraftProduct(draft, productName),
     discordMessage: '',
@@ -163,6 +167,7 @@ function buildLocalApproval(card, analysis, dedupeKey, enrichment = null) {
       cardLastSeenAt: card.lastSeenAt,
       cardLastMessageText: card.lastMessageText || '',
       enrichmentApplied: Boolean(enrichment),
+      preferredChatMapping: card?.preferredChatMapping || card?.meta?.preferredChatMapping || null,
     },
   };
 
@@ -201,6 +206,7 @@ function buildDiscordMessage(approval) {
   ];
   if (approval.productName) lines.push(`상품: ${approval.productName}`);
   if (approval.trackingNo) lines.push(`송장번호: ${approval.trackingNo}`);
+  if (approval.talkLink) lines.push(`톡톡 바로가기: <${approval.talkLink}>`);
   if (approval.recentMessages.length) {
     lines.push('', '[최근 대화]');
     for (const item of approval.recentMessages) {
@@ -233,4 +239,21 @@ function createDedupeKey(card) {
     lastSeenAt: card.lastSeenAt,
     lastMessageText: card.lastMessageText || '',
   })).digest('hex');
+}
+
+function buildTalkLink(card, talkUrl) {
+  const preferredChatMapping = card?.preferredChatMapping || card?.meta?.preferredChatMapping || null;
+  const popupUrl = firstNonEmpty(
+    preferredChatMapping?.popupUrl,
+    normalizePopupPath(preferredChatMapping?.popupPath),
+  );
+  return popupUrl || firstNonEmpty(talkUrl) || null;
+}
+
+function normalizePopupPath(value) {
+  const text = String(value || '').trim();
+  if (!text) return null;
+  if (text.startsWith('http://') || text.startsWith('https://')) return text;
+  if (text.startsWith('/')) return `https://partner.talk.naver.com${text}`;
+  return `https://partner.talk.naver.com/${text.replace(/^\/+/, '')}`;
 }
