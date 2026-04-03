@@ -3,6 +3,7 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 
 const approvalsDir = process.env.NAVERTALK_LOCAL_APPROVAL_DIR || path.join(process.cwd(), 'runtime-data', 'local-cs-approvals');
+const queueDir = process.env.NAVERTALK_LOCAL_QUEUE_DIR || path.join(process.cwd(), 'runtime-data', 'local-cs-delivery-queue');
 const shortCode = String(process.argv[2] || '').trim();
 const action = String(process.argv[3] || '').trim().toLowerCase();
 const actor = String(process.argv[4] || '대표님').trim();
@@ -54,6 +55,34 @@ approval.lastAction = {
   note,
 };
 
+await fs.mkdir(queueDir, { recursive: true });
+const queuePath = path.join(queueDir, `${approval.approvalId}.json`);
+
+if (approval.status === 'approved') {
+  approval.queue = {
+    state: 'queued',
+    queuedAt: approval.updatedAt,
+    queuePath,
+  };
+  await fs.writeFile(queuePath, JSON.stringify({
+    approvalId: approval.approvalId,
+    shortCode: approval.shortCode,
+    queuedAt: approval.updatedAt,
+    actor,
+    customerName: approval.customerName || null,
+    productName: approval.productName || null,
+    draft: approval.draft || null,
+    status: 'queued',
+  }, null, 2), 'utf8');
+} else {
+  approval.queue = {
+    state: 'not_queued',
+    queuedAt: null,
+    queuePath,
+  };
+  await fs.rm(queuePath, { force: true }).catch(() => {});
+}
+
 disableButtons(approval);
 await fs.writeFile(targetPath, JSON.stringify(approval, null, 2), 'utf8');
 
@@ -69,7 +98,9 @@ console.log(JSON.stringify({
   productName: approval.productName || null,
   inquiryType: approval.inquiryType || null,
   draft: approval.draft || null,
-  nextStep: approval.status === 'approved' ? 'send_to_talktalk' : 'stop',
+  queueState: approval.queue?.state || null,
+  queuePath,
+  nextStep: approval.status === 'approved' ? 'queue_for_talktalk_delivery' : 'stop',
 }, null, 2));
 
 function deriveShortCode(approvalId) {
