@@ -136,6 +136,8 @@
 1. `scripts/navertalk-auto-loop.mjs` 가 실행되면 먼저 `scripts/navertalk-local-approval-scan.mjs` 를 호출한다.
 2. 새 웹훅 카드 중 처리 대상이면 로컬 approval 파일을 생성한다.
 3. 새 `pending` approval 은 `runtime-data/local-cs-discord-outbox/` 에 Discord 승인 대기 outbox 로 적재한다.
+   - outbox 에는 실제 발송용 `sendRequest`(message 도구 전송 포맷)를 함께 저장한다.
+   - 같은 `shortCode` 의 오래된 pending approval 은 `superseded` 처리하고 최신 approval 만 outbox 대상으로 삼는다.
 4. 승인 클릭으로 `approved` 된 건은 `runtime-data/local-cs-delivery-queue/` 로 적재한다.
 5. 이후 별도 전달 워커가 delivery queue 를 한 건씩 꺼내 실제 톡톡 반영과 부분 캡처 완료 보고를 진행한다.
 

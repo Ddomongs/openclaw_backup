@@ -59,6 +59,8 @@
 - 로컬 자동 루프 기본 스크립트는 `scripts/navertalk-auto-loop.mjs` 이며, 이 스크립트가 새 approval 생성과 Discord 승인 대기 outbox 적재까지 맡는다.
 - Discord 승인 대기 outbox 기본 경로는 `runtime-data/local-cs-discord-outbox/` 이다.
 - 승인된 전달 큐 기본 경로는 `runtime-data/local-cs-delivery-queue/` 이다.
+- outbox 파일에는 실제 Discord 발송용 `sendRequest` 를 함께 저장한다.
+- 같은 승인코드(shortCode)로 중복 approval 이 생기면 오래된 pending outbox 는 `superseded` 처리하고 최신 approval 만 발송 대상으로 유지한다.
 
 ## 상품 관리
 - 상품 등록은 퍼센티(Percenty) 플랫폼을 사용한다.
