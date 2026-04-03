@@ -61,6 +61,10 @@
 - 승인된 전달 큐 기본 경로는 `runtime-data/local-cs-delivery-queue/` 이다.
 - outbox 파일에는 실제 Discord 발송용 `sendRequest` 를 함께 저장한다.
 - 같은 승인코드(shortCode)로 중복 approval 이 생기면 오래된 pending outbox 는 `superseded` 처리하고 최신 approval 만 발송 대상으로 유지한다.
+- delivery queue 소비 기본 스크립트는 아래 3개를 기준으로 한다.
+  - `scripts/navertalk-delivery-queue-next.mjs`
+  - `scripts/navertalk-delivery-queue-complete.mjs`
+  - `scripts/navertalk-delivery-queue-fail.mjs`
 
 ## 상품 관리
 - 상품 등록은 퍼센티(Percenty) 플랫폼을 사용한다.

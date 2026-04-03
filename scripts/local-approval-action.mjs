@@ -69,9 +69,12 @@ if (approval.status === 'approved') {
     shortCode: approval.shortCode,
     queuedAt: approval.updatedAt,
     actor,
+    userId: approval.userId || null,
     customerName: approval.customerName || null,
     productName: approval.productName || null,
+    inquiryType: approval.inquiryType || null,
     draft: approval.draft || null,
+    meta: approval.meta || {},
     status: 'queued',
   }, null, 2), 'utf8');
 } else {

@@ -140,6 +140,9 @@
    - 같은 `shortCode` 의 오래된 pending approval 은 `superseded` 처리하고 최신 approval 만 outbox 대상으로 삼는다.
 4. 승인 클릭으로 `approved` 된 건은 `runtime-data/local-cs-delivery-queue/` 로 적재한다.
 5. 이후 별도 전달 워커가 delivery queue 를 한 건씩 꺼내 실제 톡톡 반영과 부분 캡처 완료 보고를 진행한다.
+   - 시작: `scripts/navertalk-delivery-queue-next.mjs`
+   - 완료: `scripts/navertalk-delivery-queue-complete.mjs`
+   - 실패: `scripts/navertalk-delivery-queue-fail.mjs`
 
 ### 동시 접수 / 승인 큐 원칙
 - 문의가 2~3건 이상 동시에 들어와도 대표는 완료 보고를 기다리지 않고 다음 승인 카드를 계속 처리한다.
