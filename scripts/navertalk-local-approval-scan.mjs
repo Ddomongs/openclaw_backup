@@ -96,6 +96,14 @@ async function readEnrichments() {
   }
 }
 
+async function readJson(filePath) {
+  try {
+    return JSON.parse(await fs.readFile(filePath, 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
 function analyzeCard(card) {
   if (!card) return { actionable: false, reason: 'card_not_found' };
   if (card.lastDirection !== 'incoming') return { actionable: false, reason: 'last_message_not_incoming' };
