@@ -132,6 +132,13 @@
 8. 전송이 끝나면 부분 캡처와 함께 완료 보고를 올리고 다음 큐 건으로 이동한다.
 9. `hold` 또는 `revise` 이면 전달 큐에는 올리지 않고 거기서 멈춘다.
 
+### 로컬 자동 루프(웹훅 이후)
+1. `scripts/navertalk-auto-loop.mjs` 가 실행되면 먼저 `scripts/navertalk-local-approval-scan.mjs` 를 호출한다.
+2. 새 웹훅 카드 중 처리 대상이면 로컬 approval 파일을 생성한다.
+3. 새 `pending` approval 은 `runtime-data/local-cs-discord-outbox/` 에 Discord 승인 대기 outbox 로 적재한다.
+4. 승인 클릭으로 `approved` 된 건은 `runtime-data/local-cs-delivery-queue/` 로 적재한다.
+5. 이후 별도 전달 워커가 delivery queue 를 한 건씩 꺼내 실제 톡톡 반영과 부분 캡처 완료 보고를 진행한다.
+
 ### 동시 접수 / 승인 큐 원칙
 - 문의가 2~3건 이상 동시에 들어와도 대표는 완료 보고를 기다리지 않고 다음 승인 카드를 계속 처리한다.
 - 승인 클릭은 `즉시 큐 적재` 로 간주한다.

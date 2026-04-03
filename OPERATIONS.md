@@ -56,6 +56,9 @@
 - 대표 승인 후에는 해당 건을 로컬 처리 큐에 올리고, 대표는 이전 완료 보고를 기다리지 않고 다음 승인 카드를 계속 처리한다.
 - 실제 브라우저 반영은 큐에서 한 건씩 직렬 처리한다.
 - 승인 후 완료 보고는 건별로 올리며, 실제 톡톡 발송 메시지 영역의 부분 캡처를 첨부한다.
+- 로컬 자동 루프 기본 스크립트는 `scripts/navertalk-auto-loop.mjs` 이며, 이 스크립트가 새 approval 생성과 Discord 승인 대기 outbox 적재까지 맡는다.
+- Discord 승인 대기 outbox 기본 경로는 `runtime-data/local-cs-discord-outbox/` 이다.
+- 승인된 전달 큐 기본 경로는 `runtime-data/local-cs-delivery-queue/` 이다.
 
 ## 상품 관리
 - 상품 등록은 퍼센티(Percenty) 플랫폼을 사용한다.
