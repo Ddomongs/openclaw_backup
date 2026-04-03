@@ -127,6 +127,7 @@ function inferInquiryType(value) {
 
 function buildLocalApproval(card, analysis, dedupeKey, enrichment = null) {
   const approvalId = `local_apr_${createHash('sha1').update(dedupeKey).digest('hex').slice(0, 10)}`;
+  const shortCode = approvalId.replace(/^local_apr_/, '').slice(0, 6);
   const recentMessages = (card.messages || [])
     .filter((item) => item.direction === 'incoming' || item.direction === 'outgoing')
     .filter((item) => String(item.text || '').trim())
@@ -143,6 +144,7 @@ function buildLocalApproval(card, analysis, dedupeKey, enrichment = null) {
   const productName = firstNonEmpty(enrichment?.productName, card?.productContext?.productName, null);
   const approval = {
     approvalId,
+    shortCode,
     createdAt: new Date().toISOString(),
     status: 'pending',
     source: 'local-webhook-scan',
@@ -195,6 +197,7 @@ function firstNonEmpty(...values) {
 function buildDiscordMessage(approval) {
   const lines = [
     `[${approval.approvalId}] 톡톡 / ${approval.inquiryType} / ${approval.customerName || approval.userId}`,
+    `승인코드: ${approval.shortCode}`,
   ];
   if (approval.productName) lines.push(`상품: ${approval.productName}`);
   if (approval.trackingNo) lines.push(`송장번호: ${approval.trackingNo}`);
