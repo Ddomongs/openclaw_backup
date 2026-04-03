@@ -65,6 +65,11 @@ console.log(JSON.stringify({
   actor,
   note,
   file: targetPath,
+  customerName: approval.customerName || null,
+  productName: approval.productName || null,
+  inquiryType: approval.inquiryType || null,
+  draft: approval.draft || null,
+  nextStep: approval.status === 'approved' ? 'send_to_talktalk' : 'stop',
 }, null, 2));
 
 function deriveShortCode(approvalId) {

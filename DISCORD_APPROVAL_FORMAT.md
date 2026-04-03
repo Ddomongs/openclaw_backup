@@ -65,6 +65,17 @@
 - 텍스트 명령은 버튼 장애 시 백업 경로로 유지한다.
 - 버튼 클릭 이벤트만으로 approval 대상을 특정하기 어렵다면, 카드 본문과 버튼 라벨에 `승인코드`(예: `dd6075`)를 함께 노출하고 로컬 approval 파일의 `shortCode`와 매칭해 처리한다.
 
+## 버튼 클릭 후 처리 규칙
+- 버튼 클릭이 들어오면 `승인코드`와 액션(`승인`/`보류`/`수정요청`)을 추출한다.
+- 즉시 아래 명령으로 로컬 approval 상태를 반영한다.
+
+```bash
+node ./scripts/local-approval-action.mjs <승인코드> <approve|hold|revise> 대표님
+```
+
+- 위 명령 결과가 `approved` 이면, 반환된 `customerName`, `productName`, `draft`를 사용해 같은 흐름 안에서 바로 톡톡 파트너센터에 반영한다.
+- `held`/`revision_requested` 이면 실제 반영은 하지 않는다.
+
 ## 후속 처리
 - `승인` → 로컬 브라우저 자동화가 실제 톡톡/마켓 화면에 반영
 - `보류` → 후속 확인 전까지 대기

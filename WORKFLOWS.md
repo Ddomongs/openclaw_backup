@@ -105,6 +105,25 @@
 4. 이후 필요 시 Discord 버튼형 UI(`승인`, `보류`, `수정요청`)로 확장한다.
 5. 승인된 건만 로컬 브라우저 자동화가 실제 톡톡/마켓 화면에 반영한다.
 
+### Discord 버튼 클릭 후 한 번에 이어지는 로컬 처리 흐름
+1. CS 승인 채널에서 버튼 클릭 이벤트가 들어오면 버튼 라벨/본문에 포함된 `승인코드`를 먼저 추출한다.
+   - 예: `dd6075`
+2. 액션을 분류한다.
+   - `승인` → `approve`
+   - `보류` → `hold`
+   - `수정요청` → `revise`
+3. 아래 명령으로 로컬 approval 파일 상태를 먼저 반영한다.
+   - `node ./scripts/local-approval-action.mjs <승인코드> <approve|hold|revise> 대표님`
+4. 명령 결과에서 아래 정보를 바로 받는다.
+   - `approvalId`
+   - `status`
+   - `customerName`
+   - `productName`
+   - `draft`
+   - `nextStep`
+5. `status=approved` 이고 `nextStep=send_to_talktalk` 이면, 같은 흐름 안에서 바로 톡톡 파트너센터를 열어 해당 고객 상담을 찾고 초안을 입력/전송한다.
+6. `hold` 또는 `revise` 이면 실제 톡톡 반영은 하지 않고 거기서 멈춘다.
+
 ### Discord 승인 카드 예시 포맷
 ```text
 [1번] 톡톡 / 배송문의 / 장형석
