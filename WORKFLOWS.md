@@ -143,6 +143,15 @@
    - 시작: `scripts/navertalk-delivery-queue-next.mjs`
    - 완료: `scripts/navertalk-delivery-queue-complete.mjs`
    - 실패: `scripts/navertalk-delivery-queue-fail.mjs`
+   - 완료 보고 payload 생성: `scripts/navertalk-delivery-report-payload.mjs`
+
+### delivery queue 실제 처리 순서
+1. `navertalk-delivery-queue-next.mjs` 로 가장 오래된 `queued` 건을 `processing` 으로 가져온다.
+2. 브라우저에서 해당 고객 상담을 열고 approval 의 `draft` 를 실제 톡톡 입력창에 반영한다.
+3. 전송 직후 방금 보낸 메시지 말풍선 영역을 부분 캡처한다.
+4. `navertalk-delivery-queue-complete.mjs <approvalId> <screenshotPath>` 로 상태를 `done` 으로 갱신한다.
+5. `navertalk-delivery-report-payload.mjs <approvalId> <screenshotPath> [sentAt]` 로 Discord 완료 보고 payload 를 만든다.
+6. 완료 보고를 전송하고 다음 queue 건으로 이동한다.
 
 ### 동시 접수 / 승인 큐 원칙
 - 문의가 2~3건 이상 동시에 들어와도 대표는 완료 보고를 기다리지 않고 다음 승인 카드를 계속 처리한다.
