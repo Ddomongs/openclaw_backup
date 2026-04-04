@@ -10,13 +10,23 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const clean = (v) => String(v || '').replace(/\s+/g, ' ').trim();
 
 async function getTalkPage(context) {
-  const page = context.pages().find((p) => p.url().includes('/talktalk/chat'));
-  if (!page) throw new Error('톡톡 페이지를 찾지 못했습니다.');
+  let page = context.pages().find((p) => p.url().includes('/talktalk/chat'));
+  if (!page) {
+    page = await context.newPage();
+    await page.goto('https://sell.smartstore.naver.com/#/talktalk/chat', { waitUntil: 'domcontentloaded' });
+  }
+  await page.bringToFront().catch(() => {});
+  await sleep(1000);
   return page;
 }
 
 async function getTalkFrame(page) {
-  const frame = page.frames().find((f) => f.url().includes('talk.sell.smartstore.naver.com'));
+  let frame = page.frames().find((f) => f.url().includes('talk.sell.smartstore.naver.com'));
+  const started = Date.now();
+  while (!frame && Date.now() - started < 15000) {
+    await sleep(500);
+    frame = page.frames().find((f) => f.url().includes('talk.sell.smartstore.naver.com'));
+  }
   if (!frame) throw new Error('톡톡 iframe을 찾지 못했습니다.');
   return frame;
 }
