@@ -4,6 +4,8 @@ export const CONFIG = {
   quickstarBaseUrl: process.env.CSBOT_QUICKSTAR_BASE_URL || 'https://quickstar.co.kr',
   quickstarMbId: process.env.CSBOT_QUICKSTAR_MB_ID || 'sos8457',
   quickstarPageblock: process.env.CSBOT_QUICKSTAR_PAGEBLOCK || '100',
+  qnaMode: process.env.CSBOT_QNA_MODE || 'assist',
+  assistReportPath: process.env.CSBOT_ASSIST_REPORT_PATH || '/Users/dh/.openclaw/workspace/smartstore-cs-worker/runtime-data/qna-assist-latest.md',
   pollLimit: Number(process.env.CSBOT_POLL_LIMIT || 5),
   dryRun: (process.env.CSBOT_DRY_RUN || 'true').toLowerCase() !== 'false',
   timeouts: {

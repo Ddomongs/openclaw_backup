@@ -3,6 +3,7 @@ import { CONFIG } from './config.js';
 import { SS } from './smartstore-selectors.js';
 import { cleanText, extract12DigitInvoice, firstExistingSelector, firstVisibleLocator, sleep } from './utils.js';
 import { buildDeliveryDraft, ensureQuickstarSession, fetchQuickstarByInvoice, getOrCreateQuickstarPage } from './quickstar-direct.js';
+import { buildAssistItem, writeAssistReport } from './qna-assist.js';
 import { buildQnaDraft } from './qna-drafts.js';
 
 async function connectContext() {
@@ -155,6 +156,16 @@ async function processInquiry(page, rowSelector, index) {
       return { skipped: true, reason: 'qna_rule_not_matched', inquiry, qnaDraft };
     }
 
+    if (CONFIG.qnaMode === 'assist') {
+      return {
+        skipped: false,
+        assist: true,
+        inquiry,
+        draft: qnaDraft,
+        assistItem: buildAssistItem({ inquiry, draft: qnaDraft, source: 'qna' }),
+      };
+    }
+
     if (CONFIG.dryRun) {
       console.log('[DRY_RUN] 일반문의 초안만 생성했습니다.');
       return { skipped: false, dryRun: true, inquiry, draft: qnaDraft };
@@ -184,6 +195,17 @@ async function processInquiry(page, rowSelector, index) {
     return { skipped: true, reason: 'draft_missing', inquiry, quickstarResult };
   }
 
+  if (CONFIG.qnaMode === 'assist') {
+    return {
+      skipped: false,
+      assist: true,
+      inquiry,
+      quickstarResult,
+      draft,
+      assistItem: buildAssistItem({ inquiry, draft, source: 'delivery' }),
+    };
+  }
+
   if (CONFIG.dryRun) {
     console.log('[DRY_RUN] 실제 답변 등록은 하지 않았습니다.');
     return { skipped: false, dryRun: true, inquiry, quickstarResult, draft };
@@ -207,6 +229,7 @@ async function main() {
   console.log('[CONFIG]', JSON.stringify(CONFIG));
 
   const { browser, context } = await connectContext();
+  const assistItems = [];
 
   try {
     const page = await getOrCreateSmartstorePage(context);
@@ -226,10 +249,16 @@ async function main() {
       try {
         const result = await processInquiry(page, rowSelector, index);
         console.log('[RESULT]', JSON.stringify(result, null, 2));
+        if (result?.assistItem) assistItems.push(result.assistItem);
         await sleep(1500);
       } catch (error) {
         console.error('[ERROR]', index, error);
       }
+    }
+
+    if (CONFIG.qnaMode === 'assist') {
+      await writeAssistReport(CONFIG.assistReportPath, assistItems);
+      console.log('[ASSIST_REPORT]', CONFIG.assistReportPath);
     }
   } finally {
     await browser.close().catch(() => {});
