@@ -33,6 +33,10 @@ export function buildTalktalkDraft(conversation) {
     return { matched: false, reason: 'empty_text' };
   }
 
+  if (hasAny(text, ['감사', '고맙', '알겠습니다', '넵', '넹']) && !hasAny(text, ['언제', '배송', '취소', '환불', '재고', '옵션', '관세', '?'])) {
+    return { matched: false, reason: 'ack_only' };
+  }
+
   if (hasAny(text, ['취소', '환불', '반품', '교환'])) {
     return result('cancel_refund_route');
   }
@@ -56,7 +60,7 @@ export function buildTalktalkDraft(conversation) {
     return result('usage_check_needed');
   }
 
-  if (hasAny(text, ['오래 기다', '지연', '아직도', '발송 준비중', '언제 오나요'])) {
+  if (hasAny(text, ['오래 기다', '기다렸', '지연', '아직도', '발송 준비중', '언제 오나요'])) {
     return result('shipping_delay_apology');
   }
 

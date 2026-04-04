@@ -80,6 +80,18 @@ CSBOT_CDP_URL=http://127.0.0.1:9223 npm run run:once
 - 답변 말미에는 기본으로 아래 문구를 붙입니다.
   - `추가 문의는 톡톡문의로 남기시면 빠른 답변 드리겠습니다.`
 
+## 톡톡 초안보조 실행
+```bash
+CSBOT_CDP_URL=http://127.0.0.1:9223 node scripts/run-talktalk-assist.js
+```
+
+- 출력 리포트:
+  - `runtime-data/talktalk-assist-latest.md`
+- 기본 대상:
+  - 톡톡 대기/읽지 않음 대화 상위건
+- 기본 동작:
+  - 대화 수집 → 케이스 분류 → 추천 초안 생성 → 대표님 판단 메모 칸 포함 리포트 생성
+
 ## 환경 변수 예시
 `.env.example` 참고
 
