@@ -10,6 +10,7 @@
 - Quickstar 확장 입력창에 운송장 입력 + `Tab` 트리거 + 생성 초안 읽기
 
 ## 현재 포함
+- 전용 자동화 Chrome 실행 스크립트
 - Chrome CDP 연결
 - 스마트스토어 탭 찾기/열기
 - 퀵스타 확장 shadow DOM 접근
@@ -31,24 +32,38 @@ cd /Users/dh/.openclaw/workspace/smartstore-cs-worker
 npm install
 ```
 
-## Chrome 실행 전제
-전용 Chrome 프로필로 실행되어 있어야 합니다.
-예시:
-
+## 전용 자동화 Chrome 실행
 ```bash
-/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome \
-  --remote-debugging-port=9222 \
-  --user-data-dir="$HOME/Library/Application Support/Google/Chrome-CSBot"
+./scripts/start-automation-chrome.sh
 ```
 
-그리고 아래가 이미 준비되어 있어야 합니다.
+이 스크립트는 아래 기준으로 Chrome을 띄웁니다.
+- CDP 포트: `9223`
+- 프로필 경로: `smartstore-cs-worker/runtime-data/chrome-profile`
+- 퀵스타 확장 자동 로드
+- 스마트스토어 상품 Q&A 페이지 자동 오픈
+
+상태 확인:
+```bash
+./scripts/check-automation-chrome.sh
+```
+
+## 대표님이 1회 해야 하는 것
+전용 자동화 Chrome 창에서 아래만 한 번 해두면 됩니다.
 - 스마트스토어 로그인
-- 퀵스타 확장 설치/활성화
-- 가능하면 상품 Q&A 탭 열어두기
+- 퀵스타 로그인 확인
+- 필요하면 상품 Q&A 화면까지 진입
+
+이후에는 같은 프로필을 계속 재사용합니다.
 
 ## 실행
 ```bash
 npm run run:once
+```
+
+또는 환경값을 명시해서 실행:
+```bash
+CSBOT_CDP_URL=http://127.0.0.1:9223 npm run run:once
 ```
 
 ## 안전 기본값
@@ -56,10 +71,15 @@ npm run run:once
 즉, 기본 상태에서는 초안까지만 만들고 실제 답변 등록은 하지 않습니다.
 실제 등록 테스트 전에는 selector 보정부터 먼저 하시면 됩니다.
 
+## 환경 변수 예시
+`.env.example` 참고
+
 ## 파일 구조
 - `src/config.js`: 기본 설정
 - `src/utils.js`: 공통 유틸
 - `src/smartstore-selectors.js`: 스마트스토어 현장 selector 보정 지점
 - `src/quickstar-extension.js`: 퀵스타 확장 shadow DOM 제어
 - `src/run-once.js`: 1회 실행 worker
+- `scripts/start-automation-chrome.sh`: 전용 자동화 Chrome 실행
+- `scripts/check-automation-chrome.sh`: 전용 자동화 Chrome 상태 확인
 - `launchd/com.ddomongi.smartstore-cs-worker.plist.example`: launchd 예시
