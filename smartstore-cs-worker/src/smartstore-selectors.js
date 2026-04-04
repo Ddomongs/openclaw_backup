@@ -1,44 +1,40 @@
 export const SS = {
-  // TODO: 대표님 실제 상품 Q&A 페이지 기준으로 보정 필요
   unansweredListCandidates: [
-    '[data-testid="inquiry-row"]',
-    '[data-testid="comment-row"]',
-    '[role="row"]',
-    'tbody tr',
-    'li'
+    'ui-view[name="list"] > ul.seller-list-border.has-thmb > li',
+    'ui-view[name="list"] ul.seller-list-border.has-thmb > li'
   ],
 
   inquiryTitleCandidates: [
-    '[data-testid="inquiry-title"]',
-    '.title',
-    'h3',
-    'h4'
+    '.title-area strong'
   ],
 
   inquiryBodyCandidates: [
-    '[data-testid="inquiry-body"]',
-    '.question',
-    '.contents',
-    '.detail'
+    'p.text-area'
   ],
 
   orderInfoCandidates: [
-    '[data-testid="order-info"]',
-    '.order-info',
-    '.product_order_info',
-    '.info'
+    '.partition-area'
   ],
 
+  listView: 'ui-view[name="list"]',
+  searchForm: 'form[name="registerForm"]',
+  answerFilterRow: 'form[name="registerForm"] li',
+  answerFilterLabelText: '답변',
+  answerFilterSelect: '.selectize-input',
+  answerFilterOptionUnanswered: '.selectize-dropdown .option[data-value="false"]',
+  searchButton: 'form[name="registerForm"] button.btn.btn-primary[type="submit"]',
+  rowUnansweredLabel: '.title-area .label.label-danger',
+  rowReplyButton: '.btn-area button',
+  rowReplySection: '.seller-reply-section',
+
   answerTextareaCandidates: [
-    'textarea',
-    '[contenteditable="true"]',
-    'textarea[placeholder*="답변"]'
+    '.seller-reply-section textarea[placeholder*="답글"]',
+    '.seller-reply-section textarea'
   ],
 
   submitButtonCandidates: [
-    'button:has-text("답변등록")',
-    'button:has-text("등록")',
-    'button:has-text("답변")'
+    '.seller-reply-section button.progress-button',
+    'button:has-text("등록")'
   ],
 
   successToastCandidates: [

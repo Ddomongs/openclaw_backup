@@ -3,6 +3,7 @@ import { CONFIG } from './config.js';
 import { SS } from './smartstore-selectors.js';
 import { cleanText, extract12DigitInvoice, firstExistingSelector, firstVisibleLocator, sleep } from './utils.js';
 import { buildDeliveryDraft, ensureQuickstarSession, fetchQuickstarByInvoice, getOrCreateQuickstarPage } from './quickstar-direct.js';
+import { buildQnaDraft } from './qna-drafts.js';
 
 async function connectContext() {
   const browser = await chromium.connectOverCDP(CONFIG.cdpUrl);
@@ -29,6 +30,27 @@ async function ensureQaPage(page) {
   }
 }
 
+async function applyUnansweredFilter(page) {
+  const rows = page.locator(SS.answerFilterRow);
+  const count = await rows.count();
+
+  for (let i = 0; i < count; i += 1) {
+    const row = rows.nth(i);
+    const text = cleanText(await row.textContent().catch(() => ''));
+    if (!text.startsWith(SS.answerFilterLabelText)) continue;
+
+    await row.locator(SS.answerFilterSelect).click();
+    await sleep(300);
+    await page.locator(SS.answerFilterOptionUnanswered).click();
+    await sleep(300);
+    await page.locator(SS.searchButton).click();
+    await sleep(CONFIG.timeouts.medium);
+    return true;
+  }
+
+  throw new Error('답변 상태 필터 row를 찾지 못했습니다.');
+}
+
 async function collectUnansweredIndexes(page) {
   const rowSelector = await firstExistingSelector(page, SS.unansweredListCandidates);
   if (!rowSelector) {
@@ -41,8 +63,9 @@ async function collectUnansweredIndexes(page) {
 
   for (let i = 0; i < Math.min(count, CONFIG.pollLimit); i += 1) {
     const row = rows.nth(i);
+    const hasUnanswered = await row.locator(SS.rowUnansweredLabel).count().catch(() => 0);
     const text = cleanText(await row.textContent().catch(() => ''));
-    if (text.includes('미답변') || text.includes('답변대기')) {
+    if (hasUnanswered > 0 || text.startsWith('미답변')) {
       indexes.push(i);
     }
   }
@@ -50,15 +73,9 @@ async function collectUnansweredIndexes(page) {
   return { rowSelector, indexes };
 }
 
-async function openInquiryByIndex(page, rowSelector, index) {
-  const row = page.locator(rowSelector).nth(index);
-  await row.click();
-  await sleep(CONFIG.timeouts.short);
-}
-
-async function extractTextByCandidates(page, candidates) {
+async function extractTextByCandidates(scope, candidates) {
   for (const selector of candidates) {
-    const locator = page.locator(selector).first();
+    const locator = scope.locator(selector).first();
     try {
       const text = cleanText(await locator.textContent({ timeout: 1000 }));
       if (text) return text;
@@ -69,10 +86,10 @@ async function extractTextByCandidates(page, candidates) {
   return '';
 }
 
-async function extractInquiryPayload(page) {
-  const title = await extractTextByCandidates(page, SS.inquiryTitleCandidates);
-  const body = await extractTextByCandidates(page, SS.inquiryBodyCandidates);
-  const orderInfo = await extractTextByCandidates(page, SS.orderInfoCandidates);
+async function extractInquiryPayload(row) {
+  const title = await extractTextByCandidates(row, SS.inquiryTitleCandidates);
+  const body = await extractTextByCandidates(row, SS.inquiryBodyCandidates);
+  const orderInfo = await extractTextByCandidates(row, SS.orderInfoCandidates);
 
   const merged = [title, body, orderInfo].filter(Boolean).join('\n');
   const invoiceNo = extract12DigitInvoice(merged);
@@ -80,8 +97,15 @@ async function extractInquiryPayload(page) {
   return { title, body, orderInfo, invoiceNo, rawText: merged };
 }
 
-async function fillAnswer(page, answerText) {
-  const target = await firstVisibleLocator(page, SS.answerTextareaCandidates);
+async function openReplyEditor(row) {
+  const button = row.locator(SS.rowReplyButton).first();
+  await button.click();
+  await row.locator(SS.rowReplySection).waitFor({ state: 'visible', timeout: CONFIG.timeouts.long });
+  await sleep(300);
+}
+
+async function fillAnswer(page, row, answerText) {
+  const target = await firstVisibleLocator(row, SS.answerTextareaCandidates);
   if (!target) {
     throw new Error('답변 입력창 selector를 찾지 못했습니다. src/smartstore-selectors.js 보정이 필요합니다.');
   }
@@ -96,13 +120,13 @@ async function fillAnswer(page, answerText) {
   }
 }
 
-async function submitAnswer(page) {
-  const submitSelector = await firstExistingSelector(page, SS.submitButtonCandidates);
+async function submitAnswer(page, row) {
+  const submitSelector = await firstExistingSelector(row, SS.submitButtonCandidates);
   if (!submitSelector) {
     throw new Error('답변 등록 버튼 selector를 찾지 못했습니다. src/smartstore-selectors.js 보정이 필요합니다.');
   }
 
-  await page.locator(submitSelector).first().click();
+  await row.locator(submitSelector).first().click();
 
   for (const toastSelector of SS.successToastCandidates) {
     try {
@@ -117,14 +141,30 @@ async function submitAnswer(page) {
 }
 
 async function processInquiry(page, rowSelector, index) {
-  await openInquiryByIndex(page, rowSelector, index);
+  const row = page.locator(rowSelector).nth(index);
 
-  const inquiry = await extractInquiryPayload(page);
+  const inquiry = await extractInquiryPayload(row);
   console.log('[INQUIRY]', JSON.stringify(inquiry, null, 2));
 
   if (!inquiry.invoiceNo) {
-    console.log('[SKIP] 12자리 운송장을 찾지 못했습니다.');
-    return { skipped: true, reason: 'invoice_missing' };
+    const qnaDraft = buildQnaDraft(inquiry);
+    console.log('[QNA_DRAFT]', JSON.stringify(qnaDraft, null, 2));
+
+    if (!qnaDraft.matched || !qnaDraft.text) {
+      console.log('[SKIP] 일반문의 규칙에 매칭되지 않았습니다.');
+      return { skipped: true, reason: 'qna_rule_not_matched', inquiry, qnaDraft };
+    }
+
+    if (CONFIG.dryRun) {
+      console.log('[DRY_RUN] 일반문의 초안만 생성했습니다.');
+      return { skipped: false, dryRun: true, inquiry, draft: qnaDraft };
+    }
+
+    await openReplyEditor(row);
+    await fillAnswer(page, row, qnaDraft.text);
+    const submitted = await submitAnswer(page, row);
+
+    return { skipped: false, submitted, inquiry, draft: qnaDraft };
   }
 
   const context = page.context();
@@ -149,8 +189,9 @@ async function processInquiry(page, rowSelector, index) {
     return { skipped: false, dryRun: true, inquiry, quickstarResult, draft };
   }
 
-  await fillAnswer(page, draft.text);
-  const submitted = await submitAnswer(page);
+  await openReplyEditor(row);
+  await fillAnswer(page, row, draft.text);
+  const submitted = await submitAnswer(page, row);
 
   return {
     skipped: false,
@@ -171,6 +212,7 @@ async function main() {
     const page = await getOrCreateSmartstorePage(context);
 
     await ensureQaPage(page);
+    await applyUnansweredFilter(page);
 
     const { rowSelector, indexes } = await collectUnansweredIndexes(page);
     console.log('[ROWS]', { rowSelector, indexes });
