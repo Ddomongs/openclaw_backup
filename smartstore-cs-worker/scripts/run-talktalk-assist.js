@@ -1,6 +1,7 @@
 import { chromium } from 'playwright';
 import { buildTalktalkDraft } from '../src/talktalk-drafts.js';
 import { buildTalktalkAssistItem, writeTalktalkAssistReport } from '../src/talktalk-assist.js';
+import { ensureQuickstarSession, getOrCreateQuickstarPage } from '../src/quickstar-direct.js';
 
 const CDP_URL = process.env.CSBOT_CDP_URL || 'http://127.0.0.1:9223';
 const REPORT_PATH = process.env.CSBOT_TALKTALK_REPORT_PATH || '/Users/dh/.openclaw/workspace/smartstore-cs-worker/runtime-data/talktalk-assist-latest.md';
@@ -29,6 +30,15 @@ async function getTalkFrame(page) {
   }
   if (!frame) throw new Error('톡톡 iframe을 찾지 못했습니다.');
   return frame;
+}
+
+async function ensureQuickstarReady(context) {
+  const quickstarPage = await getOrCreateQuickstarPage(context);
+  const state = await ensureQuickstarSession(quickstarPage);
+  if (!state.ok) {
+    throw new Error(`퀵스타 로그인 세션이 유효하지 않습니다. url=${state.url}`);
+  }
+  return state;
 }
 
 async function clickWaitingFilter(frame) {
@@ -151,6 +161,8 @@ async function main() {
   try {
     const page = await getTalkPage(context);
     const frame = await getTalkFrame(page);
+    const quickstarState = await ensureQuickstarReady(context);
+    console.log('[QUICKSTAR_SESSION]', JSON.stringify(quickstarState));
 
     await clickWaitingFilter(frame).catch(() => false);
     const metas = await collectConversationMeta(frame);

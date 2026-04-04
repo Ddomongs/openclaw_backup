@@ -26,7 +26,7 @@ nohup "$CHROME_BIN" \
   --user-data-dir="$PROFILE_DIR" \
   --no-first-run \
   --no-default-browser-check \
-  --new-window "https://sell.smartstore.naver.com/#/comment/" \
+  --new-window "https://sell.smartstore.naver.com/#/comment/" "https://quickstar.co.kr" \
   >"$LOG_FILE" 2>&1 &
 
 sleep 3

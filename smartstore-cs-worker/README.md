@@ -44,6 +44,7 @@ npm install
 - CDP 포트: `9223`
 - 프로필 경로: `smartstore-cs-worker/runtime-data/chrome-profile`
 - 스마트스토어 상품 Q&A 페이지 자동 오픈
+- 퀵스타 페이지도 함께 열어 로그인 세션 유지 가능
 
 상태 확인:
 ```bash
@@ -87,6 +88,9 @@ CSBOT_CDP_URL=http://127.0.0.1:9223 node scripts/run-talktalk-assist.js
 
 - 출력 리포트:
   - `runtime-data/talktalk-assist-latest.md`
+- 실행 전:
+  - 같은 전용 자동화 Chrome 프로필에서 퀵스타 로그인 상태가 유지되어 있어야 함
+  - 스크립트가 실행 시작 시 퀵스타 세션을 먼저 확인하고, 로그인 세션이 아니면 중단함
 - 기본 대상:
   - 톡톡 대기/읽지 않음 대화 상위건
 - 기본 동작:
