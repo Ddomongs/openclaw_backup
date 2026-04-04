@@ -1,0 +1,13 @@
+{
+  "name": "smartstore-cs-worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Smartstore Q&A background worker scaffold using existing Quickstar extension",
+  "scripts": {
+    "run:once": "node src/run-once.js"
+  },
+  "dependencies": {
+    "playwright": "^1.52.0"
+  }
+}

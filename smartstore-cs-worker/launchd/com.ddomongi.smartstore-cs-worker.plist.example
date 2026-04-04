@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>Label</key>
+    <string>com.ddomongi.smartstore-cs-worker</string>
+
+    <key>ProgramArguments</key>
+    <array>
+      <string>/opt/homebrew/bin/node</string>
+      <string>/Users/dh/.openclaw/workspace/smartstore-cs-worker/src/run-once.js</string>
+    </array>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+      <key>CSBOT_CDP_URL</key>
+      <string>http://127.0.0.1:9222</string>
+      <key>CSBOT_SMARTSTORE_QA_URL</key>
+      <string>https://sell.smartstore.naver.com/#/comment/</string>
+      <key>CSBOT_POLL_LIMIT</key>
+      <string>5</string>
+      <key>CSBOT_DRY_RUN</key>
+      <string>true</string>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>StartInterval</key>
+    <integer>300</integer>
+
+    <key>StandardOutPath</key>
+    <string>/Users/dh/.openclaw/workspace/tmp/smartstore-cs-worker.out.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/dh/.openclaw/workspace/tmp/smartstore-cs-worker.err.log</string>
+  </dict>
+</plist>
