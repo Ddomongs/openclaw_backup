@@ -1,7 +1,21 @@
 import { cleanText } from './utils.js';
+import { getTemplate } from './qna-templates.js';
 
 function hasAny(text, keywords) {
-  return keywords.some(keyword => text.includes(keyword));
+  return keywords.some((keyword) => text.includes(keyword));
+}
+
+function result(code, extra = {}) {
+  const template = getTemplate(code);
+  if (!template) return { matched: false, reason: `template_missing:${code}` };
+  return {
+    matched: true,
+    category: code,
+    templateCode: code,
+    text: template.text,
+    tone: template.tone,
+    ...extra,
+  };
 }
 
 export function buildQnaDraft(inquiry) {
@@ -17,85 +31,61 @@ export function buildQnaDraft(inquiry) {
     return { matched: false, reason: 'manual_required_risky' };
   }
 
-  if (hasAny(text, ['재고', '구매 가능', '옵션 가능', '옵션 구매', '가능할까요'])) {
-    return {
-      matched: true,
-      category: 'stock_option',
-      text: [
-        '문의하신 상품 관련 안내드립니다.',
-        '',
-        '옵션 가능 여부 및 재고 상황은 시점에 따라 변동될 수 있습니다.',
-        '정확한 가능 여부는 확인 후 안내드리겠습니다.',
-        '페이지에 노출된 옵션 외 별도 가능 여부가 필요한 경우 추가 확인이 필요합니다.'
-      ].join('\n')
-    };
+  if (hasAny(text, ['관세', '부가세', '추가 지불', '추가금', '관부가세']) && !hasAny(text, ['얼마', '왜'])) {
+    return result('tax_fee_clear');
   }
 
-  if (hasAny(text, ['구성품', '포함', '두개 맞', '세트', '들어가', '구성'])) {
-    return {
-      matched: true,
-      category: 'components',
-      text: [
-        '문의하신 상품 구성 관련 안내드립니다.',
-        '',
-        '구성품은 판매 페이지에 기재된 구성 기준으로 출고됩니다.',
-        '옵션별 구성 차이가 있을 수 있어 상세 구성은 상품 페이지 옵션/상세설명을 함께 확인 부탁드립니다.',
-        '추가 확인이 필요한 경우 확인 후 다시 안내드리겠습니다.'
-      ].join('\n')
-    };
+  if (hasAny(text, ['배송비']) && hasAny(text, ['다르', '오르', '변동'])) {
+    return result('shipping_fee_variable');
   }
 
-  if (hasAny(text, ['호환', '가능한가요', '사용 가능', '맞나요'])) {
-    return {
-      matched: true,
-      category: 'compatibility',
-      text: [
-        '문의하신 상품 관련 안내드립니다.',
-        '',
-        '호환 여부는 적용 차량/모델/연식 또는 옵션 조건에 따라 달라질 수 있습니다.',
-        '상품 페이지 안내 기준을 우선 참고 부탁드리며, 추가 확인이 필요한 경우 확인 후 안내드리겠습니다.'
-      ].join('\n')
-    };
+  if (hasAny(text, ['오늘주문', '언제', '도착', '받아볼', '배송출발', '발송은 되었', '급해서'])) {
+    if (hasAny(text, ['언제', '도착', '받아볼', '급해서', '통관'])) {
+      return result('shipping_eta_uncertain');
+    }
+    return result('shipping_eta_general');
   }
 
-  if (hasAny(text, ['사용법', '어떻게', '열나요', '조립', '설치'])) {
-    return {
-      matched: true,
-      category: 'usage',
-      text: [
-        '문의주신 내용 확인했습니다.',
-        '',
-        '사용 방법은 상품 상세페이지 안내 또는 구성품 형태에 따라 차이가 있을 수 있습니다.',
-        '현재 문의주신 부분은 확인 후 다시 안내드리겠습니다.'
-      ].join('\n')
-    };
+  if (hasAny(text, ['재고', '입고', '품절', '발송지연'])) {
+    return result('stock_check_needed');
+  }
+
+  if (hasAny(text, ['옵션', '색상', '선택', '구매 가능', '가능할까요'])) {
+    return result('option_guidance_general');
+  }
+
+  if (hasAny(text, ['구성품', '포함', '세트', '단품', '두개 맞', '들어가', '구성'])) {
+    return result('components_reference');
+  }
+
+  if (hasAny(text, ['어떻게', '열나요', '사용법', '조립', '설치'])) {
+    return result('usage_check_needed');
+  }
+
+  if (hasAny(text, ['테슬라만', '호환', '연동', '사용 가능', '가능한건가요'])) {
+    if (hasAny(text, ['테슬라만', '연동'])) {
+      return result('compatibility_no');
+    }
+    return result('compatibility_check');
   }
 
   if (hasAny(text, ['정품'])) {
-    return {
-      matched: true,
-      category: 'authenticity',
-      text: [
-        '문의하신 상품 관련 안내드립니다.',
-        '',
-        '등록된 상품은 현재 판매 페이지 기준으로 안내되는 상품입니다.',
-        '세부 사양 및 구성 정보는 상품 페이지 표기 내용을 함께 참고 부탁드립니다.',
-        '추가로 확인이 필요한 부분은 확인 후 안내드리겠습니다.'
-      ].join('\n')
-    };
+    return result('authenticity_general');
   }
 
-  if (hasAny(text, ['배송', '출고', '도착', '언제'])) {
-    return {
-      matched: true,
-      category: 'general_shipping',
-      text: [
-        '문의하신 배송 관련 내용 안내드립니다.',
-        '',
-        '출고 및 배송 일정은 주문 시점과 물류 상황에 따라 변동될 수 있습니다.',
-        '정확한 진행 상황은 확인 후 다시 안내드리겠습니다.'
-      ].join('\n')
-    };
+  if (hasAny(text, ['사이즈', '105', '44', '실측', '착용감', '추천'])) {
+    if (hasAny(text, ['추천'])) {
+      return result('size_recommendation_general');
+    }
+    return result('size_reference');
+  }
+
+  if (hasAny(text, ['2개', '여러개', '수량'])) {
+    return result('quantity_possible');
+  }
+
+  if (hasAny(text, ['톡톡'])) {
+    return result('followup_talk');
   }
 
   return { matched: false, reason: 'no_rule_matched' };
