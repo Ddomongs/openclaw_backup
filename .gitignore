@@ -16,6 +16,7 @@ references/cs/CS지침2-원본.md
 # Env / secrets
 .env
 .env.*
+!.env.example
 *.key
 *.pem
 *.p12
@@ -26,3 +27,7 @@ references/cs/CS지침2-원본.md
 tmp/
 temp/
 runtime-data/
+
+# Node dependencies
+node_modules/
+smartstore-cs-worker/node_modules/
