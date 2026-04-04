@@ -27,7 +27,10 @@ export function extractQuickstarQueryCandidates({ text = '', customerName = '', 
 
   for (const match of source.match(/\b\d{12}\b/g) || []) push(match, 'gr_tc_invoice');
   for (const match of source.match(/\bGR[0-9A-Z-]+\b/gi) || []) push(match, 'or_gr_code');
-  for (const match of source.match(/010-\d{4}-\d{4}/g) || []) push(match, 'gr_tel');
+  for (const match of source.match(/010-\d{4}-\d{4}/g) || []) {
+    push(match, 'gr_tel');
+    push(match.replace(/-/g, ''), 'gr_tel');
+  }
   for (const match of source.match(/\b(?:YT|78|SF|JD|77)[A-Z0-9-]+\b/gi) || []) push(match, 'it_local_invoice');
   for (const match of source.match(/\b\d{16,}\b/g) || []) push(match, 'it_local_order');
 
@@ -140,15 +143,21 @@ export async function fetchQuickstarByQuery(page, query) {
     }
 
     const pageText = document.body?.innerText || '';
+    const groupNoMatch = pageText.match(/\bGR\d{8,}\b/i);
+    const domesticInvoiceMatch = pageText.match(/CJ대한통운\s+(\d{12})/);
+    const overseasOrderMatch = pageText.match(/주문번호\s+(\d{16,})/);
     const explicitNoResult = /조회 결과 없음|검색 결과 없음|데이터가 없습니다/.test(pageText);
     const hasLoginWord = /로그인\b|로그인 후|회원가입|비밀번호 찾기|아이디 찾기/.test(pageText);
     const hasMypageWord = /마이페이지|신청내역|입고대기|출고완료|로그아웃|배송대행/.test(pageText);
     const loginRequired = hasLoginWord && !hasMypageWord;
-    const noResult = explicitNoResult || (!loginRequired && !status && resultRows === 0);
+    const hasRealResult = Boolean(status || groupNoMatch || domesticInvoiceMatch || overseasOrderMatch);
+    const noResult = explicitNoResult || (!loginRequired && !hasRealResult);
 
     return {
       query: { find, value },
-      invoiceNo: find === 'gr_tc_invoice' ? value : null,
+      invoiceNo: find === 'gr_tc_invoice' ? value : (domesticInvoiceMatch?.[1] || null),
+      groupNo: groupNoMatch?.[0] || null,
+      overseasOrderNo: overseasOrderMatch?.[1] || null,
       status,
       statusCount: statusEls.length,
       resultRows,
