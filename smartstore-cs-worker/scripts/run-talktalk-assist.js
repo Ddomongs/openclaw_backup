@@ -1,7 +1,7 @@
 import { chromium } from 'playwright';
 import { buildTalktalkDraft } from '../src/talktalk-drafts.js';
 import { buildTalktalkAssistItem, writeTalktalkAssistReport } from '../src/talktalk-assist.js';
-import { ensureQuickstarSession, getOrCreateQuickstarPage } from '../src/quickstar-direct.js';
+import { buildDeliveryDraft, ensureQuickstarSession, getOrCreateQuickstarPage, resolveQuickstarShipment } from '../src/quickstar-direct.js';
 
 const CDP_URL = process.env.CSBOT_CDP_URL || 'http://127.0.0.1:9223';
 const REPORT_PATH = process.env.CSBOT_TALKTALK_REPORT_PATH || '/Users/dh/.openclaw/workspace/smartstore-cs-worker/runtime-data/talktalk-assist-latest.md';
@@ -97,6 +97,19 @@ async function collectConversationMeta(frame) {
     .slice(0, LIMIT);
 }
 
+async function expandDeliveryInfo(frame) {
+  const buttons = frame.locator('button');
+  const count = await buttons.count();
+  for (let i = 0; i < count; i += 1) {
+    const btn = buttons.nth(i);
+    const text = clean(await btn.textContent().catch(() => ''));
+    if (text.includes('배송지 정보')) {
+      await btn.click().catch(() => {});
+      await sleep(300);
+    }
+  }
+}
+
 async function openConversation(frame, href) {
   await frame.evaluate((url) => {
     window.location.href = url;
@@ -107,6 +120,7 @@ async function openConversation(frame, href) {
 async function extractConversation(frame, meta) {
   return frame.evaluate((fallback) => {
     const clean = (v) => String(v || '').replace(/\s+/g, ' ').trim();
+    const bodyText = clean(document.body?.innerText || '');
 
     const customerName = clean(
       document.querySelector('.chat_header .chat_name, .profile_info .chat_name')?.textContent
@@ -122,6 +136,15 @@ async function extractConversation(frame, meta) {
       document.querySelector('.product_name, .link_product, .chat_product a, .chat_product .title')?.textContent
       || ''
     );
+
+    const buyerNameMatch = bodyText.match(/구매자명:?\s*([가-힣A-Za-z0-9_*]{2,20})/);
+    const buyerName = clean(buyerNameMatch?.[1] || '');
+    const receiverNameMatch = bodyText.match(/수령인\s*([가-힣A-Za-z0-9_*]{2,20})/);
+    const receiverName = clean(receiverNameMatch?.[1] || '');
+    const receiverPhoneMatch = bodyText.match(/연락처\s*(010-\d{4}-\d{4})/);
+    const receiverPhone = clean(receiverPhoneMatch?.[1] || '');
+
+    const orderNumbers = Array.from(bodyText.matchAll(/주문번호\s*:?\s*(\d{10,})/g)).map((m) => m[1]);
 
     const messages = Array.from(document.querySelectorAll('.message_section li._message')).map((li) => {
       const sender = li.getAttribute('data-sender') || '';
@@ -148,10 +171,18 @@ async function extractConversation(frame, meta) {
       customerMessages,
       sellerReplies,
       latestCustomerMessage: customerMessages[customerMessages.length - 1] || fallback.preview || '',
+      buyerName,
+      receiverName,
+      receiverPhone,
+      orderNumbers,
       unreadCount: fallback.unreadCount || 0,
       preview: fallback.preview || '',
     };
   }, meta);
+}
+
+function isShippingCategory(category) {
+  return ['shipping_eta_basic', 'shipping_eta_long', 'shipping_delay_apology'].includes(category);
 }
 
 async function main() {
@@ -170,8 +201,48 @@ async function main() {
 
     for (const meta of metas) {
       await openConversation(frame, meta.href);
+      await expandDeliveryInfo(frame);
       const conversation = await extractConversation(frame, meta);
-      const draft = buildTalktalkDraft(conversation);
+      let draft = buildTalktalkDraft(conversation);
+
+      if (draft.matched && isShippingCategory(draft.category)) {
+        const quickstarPage = await getOrCreateQuickstarPage(context);
+        const shipmentLookup = await resolveQuickstarShipment(quickstarPage, {
+          text: [
+            conversation.latestCustomerMessage,
+            conversation.preview,
+            conversation.receiverPhone,
+            conversation.orderNumbers?.join(' '),
+          ].filter(Boolean).join(' '),
+          customerName: conversation.receiverName || conversation.customerName,
+          buyerName: conversation.buyerName,
+        });
+
+        if (shipmentLookup.ok) {
+          const deliveryDraft = buildDeliveryDraft({
+            inquiry: {
+              body: conversation.latestCustomerMessage,
+              rawText: [conversation.latestCustomerMessage, conversation.preview].filter(Boolean).join('\n'),
+            },
+            shipment: shipmentLookup.result,
+          });
+
+          draft = {
+            ...draft,
+            templateCode: 'quickstar_delivery_result',
+            text: deliveryDraft.text,
+            tone: deliveryDraft.confidence === 'medium' ? 'long' : draft.tone,
+            quickstarQuery: shipmentLookup.query,
+          };
+        } else {
+          draft = {
+            ...draft,
+            route: 'handoff_required',
+            reason: `quickstar_${shipmentLookup.reason}`,
+          };
+        }
+      }
+
       if (!draft.matched) {
         console.log('[SKIP]', conversation.customerName, draft.reason || 'unmatched');
         continue;

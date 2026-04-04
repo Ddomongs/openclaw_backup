@@ -17,7 +17,10 @@ export function withTalktalkFollowup(text) {
 }
 
 export function buildTalktalkAssistItem({ conversation, draft }) {
-  const autoReply = AUTO_REPLY_CATEGORIES.has(draft?.category);
+  const autoReply = draft?.route
+    ? draft.route === 'auto_draft'
+    : AUTO_REPLY_CATEGORIES.has(draft?.category);
+  const needsQuickstarCheck = String(draft?.reason || '').startsWith('quickstar_');
   return {
     customerName: conversation.customerName || '',
     tag: conversation.tag || '',
@@ -31,7 +34,9 @@ export function buildTalktalkAssistItem({ conversation, draft }) {
     suggestedReply: autoReply ? withTalktalkFollowup(draft?.text || '') : '',
     operatorGuide: autoReply
       ? '배송문의로 분류되어 자동 초안 생성 대상입니다. 대표님이 검토 후 바로 사용하거나 수정하시면 됩니다.'
-      : '배송문의 외 항목이라 대표님 판단이 필요합니다. 핵심 사실/판단만 적어주시면 고객용 답변 초안으로 다시 정리합니다.',
+      : needsQuickstarCheck
+        ? '배송문의로 분류되었지만 퀵스타 조회 결과가 확인되지 않아 대표님 판단이 필요합니다. 확인된 배송 상태나 핵심 포인트를 적어주시면 고객용 답변 초안으로 다시 정리합니다.'
+        : '배송문의 외 항목이라 대표님 판단이 필요합니다. 핵심 사실/판단만 적어주시면 고객용 답변 초안으로 다시 정리합니다.',
   };
 }
 
@@ -60,7 +65,7 @@ export async function writeTalktalkAssistReport(outputPath, items = []) {
       lines.push(item.suggestedReply || '(초안 없음)');
     } else {
       lines.push('### 대표님 확인 필요');
-      lines.push('배송문의 외 항목으로 분류되어 자동 초안을 생성하지 않았습니다. 대표님 판단 후 답변 방향을 적어주시면 초안으로 다시 정리합니다.');
+      lines.push(item.operatorGuide);
     }
     lines.push('');
     lines.push('### 대표님 판단 메모');
