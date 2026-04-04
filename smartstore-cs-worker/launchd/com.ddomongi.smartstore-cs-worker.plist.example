@@ -17,6 +17,12 @@
       <string>http://127.0.0.1:9223</string>
       <key>CSBOT_SMARTSTORE_QA_URL</key>
       <string>https://sell.smartstore.naver.com/#/comment/</string>
+      <key>CSBOT_QUICKSTAR_BASE_URL</key>
+      <string>https://quickstar.co.kr</string>
+      <key>CSBOT_QUICKSTAR_MB_ID</key>
+      <string>sos8457</string>
+      <key>CSBOT_QUICKSTAR_PAGEBLOCK</key>
+      <string>100</string>
       <key>CSBOT_POLL_LIMIT</key>
       <string>5</string>
       <key>CSBOT_DRY_RUN</key>

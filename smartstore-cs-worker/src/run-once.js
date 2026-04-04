@@ -2,7 +2,7 @@ import { chromium } from 'playwright';
 import { CONFIG } from './config.js';
 import { SS } from './smartstore-selectors.js';
 import { cleanText, extract12DigitInvoice, firstExistingSelector, firstVisibleLocator, sleep } from './utils.js';
-import { ensureQuickstarLoaded, lookupTrackingWithExtension } from './quickstar-extension.js';
+import { buildDeliveryDraft, ensureQuickstarSession, fetchQuickstarByInvoice, getOrCreateQuickstarPage } from './quickstar-direct.js';
 
 async function connectContext() {
   const browser = await chromium.connectOverCDP(CONFIG.cdpUrl);
@@ -10,7 +10,7 @@ async function connectContext() {
   if (!contexts.length) {
     throw new Error('연결된 Chrome context가 없습니다. Chrome 원격 디버깅 포트를 확인하세요.');
   }
-  return contexts[0];
+  return { browser, context: contexts[0] };
 }
 
 async function getOrCreateSmartstorePage(context) {
@@ -127,26 +127,29 @@ async function processInquiry(page, rowSelector, index) {
     return { skipped: true, reason: 'invoice_missing' };
   }
 
-  await ensureQuickstarLoaded(page);
-  const quickstarResult = await lookupTrackingWithExtension(page, inquiry.invoiceNo);
-  console.log('[QUICKSTAR]', JSON.stringify(quickstarResult, null, 2));
+  const context = page.context();
+  const quickstarPage = await getOrCreateQuickstarPage(context);
+  const quickstarSession = await ensureQuickstarSession(quickstarPage);
+  console.log('[QUICKSTAR_SESSION]', JSON.stringify(quickstarSession, null, 2));
 
-  if (!quickstarResult.hasResult) {
-    console.log('[SKIP] 퀵스타 결과/초안이 없습니다. 로그인 또는 조회 결과를 확인하세요.');
-    return { skipped: true, reason: 'quickstar_no_result', inquiry, quickstarResult };
+  if (!quickstarSession.ok) {
+    return { skipped: true, reason: 'quickstar_session_invalid', inquiry, quickstarSession };
   }
 
-  if (!quickstarResult.draftText) {
-    console.log('[SKIP] 퀵스타가 고객 답변 초안을 만들지 못했습니다.');
+  const quickstarResult = await fetchQuickstarByInvoice(quickstarPage, inquiry.invoiceNo);
+  console.log('[QUICKSTAR]', JSON.stringify(quickstarResult, null, 2));
+
+  const draft = buildDeliveryDraft({ inquiry, shipment: quickstarResult });
+  if (!draft?.text) {
     return { skipped: true, reason: 'draft_missing', inquiry, quickstarResult };
   }
 
   if (CONFIG.dryRun) {
     console.log('[DRY_RUN] 실제 답변 등록은 하지 않았습니다.');
-    return { skipped: false, dryRun: true, inquiry, quickstarResult };
+    return { skipped: false, dryRun: true, inquiry, quickstarResult, draft };
   }
 
-  await fillAnswer(page, quickstarResult.draftText);
+  await fillAnswer(page, draft.text);
   const submitted = await submitAnswer(page);
 
   return {
@@ -154,6 +157,7 @@ async function processInquiry(page, rowSelector, index) {
     submitted,
     inquiry,
     quickstarResult,
+    draft,
   };
 }
 
@@ -161,28 +165,32 @@ async function main() {
   console.log('[START] smartstore-cs-worker run-once');
   console.log('[CONFIG]', JSON.stringify(CONFIG));
 
-  const context = await connectContext();
-  const page = await getOrCreateSmartstorePage(context);
+  const { browser, context } = await connectContext();
 
-  await ensureQaPage(page);
-  await ensureQuickstarLoaded(page);
+  try {
+    const page = await getOrCreateSmartstorePage(context);
 
-  const { rowSelector, indexes } = await collectUnansweredIndexes(page);
-  console.log('[ROWS]', { rowSelector, indexes });
+    await ensureQaPage(page);
 
-  if (!indexes.length) {
-    console.log('[DONE] 처리할 미답변 문의가 없습니다.');
-    return;
-  }
+    const { rowSelector, indexes } = await collectUnansweredIndexes(page);
+    console.log('[ROWS]', { rowSelector, indexes });
 
-  for (const index of indexes) {
-    try {
-      const result = await processInquiry(page, rowSelector, index);
-      console.log('[RESULT]', JSON.stringify(result, null, 2));
-      await sleep(1500);
-    } catch (error) {
-      console.error('[ERROR]', index, error);
+    if (!indexes.length) {
+      console.log('[DONE] 처리할 미답변 문의가 없습니다.');
+      return;
     }
+
+    for (const index of indexes) {
+      try {
+        const result = await processInquiry(page, rowSelector, index);
+        console.log('[RESULT]', JSON.stringify(result, null, 2));
+        await sleep(1500);
+      } catch (error) {
+        console.error('[ERROR]', index, error);
+      }
+    }
+  } finally {
+    await browser.close().catch(() => {});
   }
 
   console.log('[DONE] run-once finished');

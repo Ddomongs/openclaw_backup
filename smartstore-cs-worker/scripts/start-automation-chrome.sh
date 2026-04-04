@@ -2,8 +2,13 @@
 set -euo pipefail
 
 WORKDIR="/Users/dh/.openclaw/workspace/smartstore-cs-worker"
-PROFILE_DIR="$WORKDIR/runtime-data/chrome-profile"
-EXT_DIR="/Users/dh/.openclaw/workspace/quickstar-extension/11. 퀵스타 배송 조회 크롬플러그인"
+LEGACY_PROFILE_DIR="/Users/dh/.openclaw/workspace/tmp/chrome-csbot-profile"
+DEFAULT_PROFILE_DIR="$WORKDIR/runtime-data/chrome-profile"
+if [ -d "$LEGACY_PROFILE_DIR" ]; then
+  PROFILE_DIR="${CSBOT_PROFILE_DIR:-$LEGACY_PROFILE_DIR}"
+else
+  PROFILE_DIR="${CSBOT_PROFILE_DIR:-$DEFAULT_PROFILE_DIR}"
+fi
 CDP_PORT="${CSBOT_CDP_PORT:-9223}"
 CHROME_BIN="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 LOG_FILE="$WORKDIR/runtime-data/chrome.log"
@@ -19,7 +24,6 @@ fi
 nohup "$CHROME_BIN" \
   --remote-debugging-port="$CDP_PORT" \
   --user-data-dir="$PROFILE_DIR" \
-  --load-extension="$EXT_DIR" \
   --no-first-run \
   --no-default-browser-check \
   --new-window "https://sell.smartstore.naver.com/#/comment/" \

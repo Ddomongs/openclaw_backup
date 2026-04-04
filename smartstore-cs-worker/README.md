@@ -5,17 +5,18 @@
 ## 목표
 - 같은 macOS 계정에서 실행
 - 실제 Chrome 창/탭을 유지한 채 백그라운드에 가깝게 동작
-- 스마트스토어 페이지에 이미 주입된 퀵스타 확장을 그대로 활용
+- 퀵스타 확장 설치 없이 퀵스타 사이트를 직접 조회
 - 배송문의에서 **12자리 국내 운송장만** 사용
-- Quickstar 확장 입력창에 운송장 입력 + `Tab` 트리거 + 생성 초안 읽기
+- 퀵스타 로그인 세션을 재사용해 운송장 기준 상태 조회 + 내부 초안 생성
 
 ## 현재 포함
 - 전용 자동화 Chrome 실행 스크립트
 - Chrome CDP 연결
 - 스마트스토어 탭 찾기/열기
-- 퀵스타 확장 shadow DOM 접근
-- 운송장 조회 트리거
-- 확장 초안 읽기
+- 퀵스타 직접 조회 URL 구성
+- 퀵스타 로그인 세션 확인
+- 운송장 기준 직접 조회 + 상태 파싱
+- 내부 배송안내 초안 생성
 - 답변 입력/등록용 골격
 
 ## 아직 현장 보정 필요한 것
@@ -40,7 +41,6 @@ npm install
 이 스크립트는 아래 기준으로 Chrome을 띄웁니다.
 - CDP 포트: `9223`
 - 프로필 경로: `smartstore-cs-worker/runtime-data/chrome-profile`
-- 퀵스타 확장 자동 로드
 - 스마트스토어 상품 Q&A 페이지 자동 오픈
 
 상태 확인:
@@ -51,7 +51,7 @@ npm install
 ## 대표님이 1회 해야 하는 것
 전용 자동화 Chrome 창에서 아래만 한 번 해두면 됩니다.
 - 스마트스토어 로그인
-- 퀵스타 로그인 확인
+- 퀵스타 로그인
 - 필요하면 상품 Q&A 화면까지 진입
 
 이후에는 같은 프로필을 계속 재사용합니다.
@@ -78,7 +78,7 @@ CSBOT_CDP_URL=http://127.0.0.1:9223 npm run run:once
 - `src/config.js`: 기본 설정
 - `src/utils.js`: 공통 유틸
 - `src/smartstore-selectors.js`: 스마트스토어 현장 selector 보정 지점
-- `src/quickstar-extension.js`: 퀵스타 확장 shadow DOM 제어
+- `src/quickstar-direct.js`: 퀵스타 직접 조회/파싱/초안 생성
 - `src/run-once.js`: 1회 실행 worker
 - `scripts/start-automation-chrome.sh`: 전용 자동화 Chrome 실행
 - `scripts/check-automation-chrome.sh`: 전용 자동화 Chrome 상태 확인
