@@ -185,6 +185,20 @@ function channelLabel(channel) {
   return CHANNEL_LABELS[channel] || channel || '기타';
 }
 
+function inferRoomLabel(session) {
+  if (session?.groupChannel) return session.groupChannel;
+  const displayName = String(session?.displayName || '');
+  if (displayName.includes('#')) {
+    const part = displayName.slice(displayName.lastIndexOf('#')).trim();
+    if (part) return part;
+  }
+  const originLabel = String(session?.origin?.label || '');
+  const match = originLabel.match(/(#[^\s]+(?:-[^\s]+)?)/);
+  if (match?.[1]) return match[1];
+  if (session?.kind === 'cron') return '크론 세션';
+  return displayName || session?.key || channelLabel(detectChannel(session));
+}
+
 async function parseBody(req) {
   return new Promise((resolve, reject) => {
     let raw = '';
@@ -483,6 +497,7 @@ async function loadStoredSessions() {
         live: liveSession || null,
         liveStatus: liveSession?.status || null,
         displayName: liveSession?.displayName || value?.origin?.label || key,
+        groupChannel: value?.groupChannel || liveSession?.groupChannel || null,
         kind: liveSession?.kind || inferKind(key),
         totalTokens: liveSession?.totalTokens ?? null,
         estimatedCostUsd: liveSession?.estimatedCostUsd ?? null,
@@ -516,6 +531,7 @@ async function loadStoredSessions() {
       active: Boolean(session.live),
       channelKey: detectChannel(session),
       channelLabel: channelLabel(detectChannel(session)),
+      roomLabel: inferRoomLabel(session),
     });
   }
 
@@ -1054,6 +1070,7 @@ async function buildDashboardData() {
       sessionFileSizeLabel: session.sessionFileSizeLabel,
       recentMessages: session.recentMessages || [],
       origin: session.origin,
+      roomLabel: session.roomLabel,
     })),
     cronJobs,
     activities,

@@ -396,9 +396,66 @@
       .activity-list,
       .channel-list,
       .session-list,
-      .work-columns {
+      .work-columns,
+      .agent-group-list,
+      .room-group-list {
         display: grid;
         gap: 14px;
+      }
+
+      .agent-group {
+        display: grid;
+        gap: 12px;
+      }
+
+      .agent-group-header {
+        position: sticky;
+        top: 12px;
+        z-index: 4;
+        padding: 14px 16px;
+        border-radius: 18px;
+        border: 1px solid var(--line);
+        background: rgba(255,255,255,0.92);
+        backdrop-filter: blur(8px);
+        box-shadow: var(--shadow);
+      }
+
+      .agent-group-header .title-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .agent-group-header .sub-row {
+        margin-top: 8px;
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .room-group-card {
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: #fff;
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+
+      .room-group-head {
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        background: linear-gradient(180deg, #fbfcff 0%, #f6f8fc 100%);
+      }
+
+      .room-group-meta {
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 13px;
       }
 
       .warning-panel,
@@ -938,6 +995,38 @@
         `;
       }
 
+      function groupBy(items, keyFn) {
+        const map = new Map();
+        for (const item of items) {
+          const key = keyFn(item);
+          if (!map.has(key)) map.set(key, []);
+          map.get(key).push(item);
+        }
+        return map;
+      }
+
+      function agentSectionHeader(agent, subtitle, chips = []) {
+        return `
+          <div class="agent-group-header">
+            <div class="title-row">
+              <div class="inline-row">
+                <span style="font-size:24px">${escapeHtml(agent?.emoji || '🤖')}</span>
+                <div>
+                  <div style="font-size:20px; font-weight:800">${escapeHtml(agent?.name || agent?.id || '에이전트')}</div>
+                  <div class="muted" style="margin-top:4px">${escapeHtml(subtitle || '')}</div>
+                </div>
+              </div>
+              <div class="inline-row">
+                <button class="btn btn-secondary" data-open-agent="${escapeHtml(agent?.id || '')}">대표설정 보기</button>
+              </div>
+            </div>
+            <div class="sub-row">
+              ${chips.join('')}
+            </div>
+          </div>
+        `;
+      }
+
       function bindCommonActionButtons(root = document) {
         root.querySelectorAll('[data-open-agent]').forEach((button) => {
           button.addEventListener('click', () => openAgentModal(button.dataset.openAgent));
@@ -1064,6 +1153,12 @@
         });
 
         const channelOptions = Array.from(new Set((state.dashboard.sessions || []).map((session) => session.channelKey))).sort();
+        const groupedByAgent = Array.from(groupBy(sessions, (session) => session.agentId).entries())
+          .map(([agentId, items]) => ({
+            agent: findAgent(agentId) || { id: agentId, name: agentId, emoji: '🤖' },
+            items: items.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0)),
+          }))
+          .sort((a, b) => (b.items[0]?.updatedAt || 0) - (a.items[0]?.updatedAt || 0));
 
         return `
           <div class="filter-bar panel">
@@ -1100,44 +1195,40 @@
             </div>
           </div>
 
-          <div class="table-panel panel">
-            <table>
-              <thead>
-                <tr>
-                  <th>세션</th>
-                  <th>에이전트</th>
-                  <th>상태</th>
-                  <th>업데이트</th>
-                  <th>채널</th>
-                  <th>모델 / 토큰</th>
-                  <th>파일</th>
-                  <th style="text-align:right">동작</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${sessions.length ? sessions.map((session) => `
-                  <tr>
-                    <td>
-                      <div style="font-weight:800">${escapeHtml(session.displayName)}</div>
-                      <div class="muted" style="margin-top:8px; white-space:pre-wrap; line-height:1.7">${escapeHtml(session.preview)}</div>
-                      <div class="mono muted" style="margin-top:6px; font-size:12px">${escapeHtml(session.key)}</div>
-                    </td>
-                    <td>${escapeHtml(session.agentEmoji)} ${escapeHtml(session.agentName)}</td>
-                    <td>${badge(session.liveStatus || (session.active ? 'active' : 'stored'))}</td>
-                    <td>${escapeHtml(session.updatedAtLabel || '-')}<div class="muted" style="margin-top:6px; font-size:12px">${escapeHtml(session.updatedAtIso || '-')}</div></td>
-                    <td>${escapeHtml(session.channelLabel || '-')}<div class="muted" style="margin-top:6px">${escapeHtml(session.kind || '-')}</div></td>
-                    <td>${escapeHtml(session.model || '-')}<div class="muted" style="margin-top:6px">${typeof session.totalTokens === 'number' ? `${numFmt.format(session.totalTokens)} 토큰` : '-'}</div></td>
-                    <td class="mono" style="font-size:12px">${escapeHtml(session.sessionFile || '-')}</td>
-                    <td>
-                      <div style="display:flex; justify-content:flex-end; gap:8px">
-                        <button class="ghost-icon" data-open-session="${escapeHtml(session.key)}">👁️</button>
-                        <button class="ghost-icon" data-delete-session="${escapeHtml(session.key)}">🗑️</button>
+          <div class="agent-group-list">
+            ${groupedByAgent.length ? groupedByAgent.map(({ agent, items }) => {
+              const rooms = Array.from(groupBy(items, (session) => session.roomLabel || session.displayName || session.channelLabel || '기타').entries())
+                .map(([roomLabel, roomItems]) => ({
+                  roomLabel,
+                  items: roomItems.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0)),
+                }))
+                .sort((a, b) => (b.items[0]?.updatedAt || 0) - (a.items[0]?.updatedAt || 0));
+              return `
+                <section class="agent-group">
+                  ${agentSectionHeader(agent, `${numFmt.format(items.length)}개 세션 · 방 ${numFmt.format(rooms.length)}개`, [
+                    `<span class="badge run">활성 ${numFmt.format(items.filter((item) => item.active).length)}</span>`,
+                    `<span class="badge purple">실행 중 ${numFmt.format(items.filter((item) => item.liveStatus === 'running').length)}</span>`,
+                    `<span class="badge warn">채널 ${numFmt.format(new Set(items.map((item) => item.channelLabel)).size)}</span>`,
+                  ])}
+                  <div class="room-group-list">
+                    ${rooms.map((room) => `
+                      <div class="room-group-card">
+                        <div class="room-group-head">
+                          <div>
+                            <strong style="font-size:18px">${escapeHtml(room.roomLabel)}</strong>
+                            <div class="room-group-meta">${numFmt.format(room.items.length)}개 세션 · 마지막 ${escapeHtml(room.items[0]?.updatedAtLabel || '-')}</div>
+                          </div>
+                          <span class="count-pill">${numFmt.format(room.items.length)}</span>
+                        </div>
+                        <div>
+                          ${room.items.map((session) => sessionCard(session)).join('')}
+                        </div>
                       </div>
-                    </td>
-                  </tr>
-                `).join('') : '<tr><td colspan="8"><div class="empty">조건에 맞는 세션이 없습니다.</div></td></tr>'}
-              </tbody>
-            </table>
+                    `).join('')}
+                  </div>
+                </section>
+              `;
+            }).join('') : '<div class="panel"><div class="empty">조건에 맞는 세션이 없습니다.</div></div>'}
           </div>
         `;
       }
@@ -1152,6 +1243,12 @@
           if (state.filters.cronStatus !== 'all' && job.status !== state.filters.cronStatus) return false;
           return true;
         });
+        const groupedByAgent = Array.from(groupBy(jobs, (job) => job.agentId).entries())
+          .map(([agentId, items]) => ({
+            agent: findAgent(agentId) || { id: agentId, name: agentId, emoji: '🤖' },
+            items: items,
+          }))
+          .sort((a, b) => (b.items.length || 0) - (a.items.length || 0));
 
         return `
           <div class="filter-bar panel">
@@ -1182,33 +1279,42 @@
             </div>
           </div>
 
-          <div class="table-panel panel">
-            <table>
-              <thead>
-                <tr>
-                  <th>이름</th>
-                  <th>에이전트</th>
-                  <th>스케줄</th>
-                  <th>상태</th>
-                  <th>마지막 실행</th>
-                  <th>다음 실행</th>
-                  <th>요약</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${jobs.length ? jobs.map((job) => `
-                  <tr>
-                    <td><div style="font-weight:800">${escapeHtml(job.name)}</div><div class="muted" style="margin-top:8px; white-space:pre-wrap; line-height:1.65">${escapeHtml(job.description || '-')}</div></td>
-                    <td>${escapeHtml(findAgent(job.agentId)?.emoji || '🤖')} ${escapeHtml(findAgent(job.agentId)?.name || job.agentId)}</td>
-                    <td class="mono">${escapeHtml(job.schedule.expr)}<div class="muted" style="margin-top:6px">${escapeHtml(job.schedule.tz)}</div></td>
-                    <td>${badge(job.status)}</td>
-                    <td>${escapeHtml(job.lastRunLabel || '-')}<div class="muted" style="margin-top:6px">${job.durationMs ? `${Math.round(job.durationMs / 1000)}초` : '-'}</div></td>
-                    <td>${escapeHtml(job.nextRunLabel || '-')}</td>
-                    <td style="white-space:pre-wrap; line-height:1.65">${escapeHtml(job.latestSummary || '-')}</td>
-                  </tr>
-                `).join('') : '<tr><td colspan="7"><div class="empty">조건에 맞는 크론이 없습니다.</div></td></tr>'}
-              </tbody>
-            </table>
+          <div class="agent-group-list">
+            ${groupedByAgent.length ? groupedByAgent.map(({ agent, items }) => `
+              <section class="agent-group">
+                ${agentSectionHeader(agent, `${numFmt.format(items.length)}개 크론`, [
+                  `<span class="badge err">오류 ${numFmt.format(items.filter((item) => item.status === 'error').length)}</span>`,
+                  `<span class="badge run">실행 중 ${numFmt.format(items.filter((item) => item.status === 'running').length)}</span>`,
+                  `<span class="badge warn">비활성 ${numFmt.format(items.filter((item) => item.status === 'disabled').length)}</span>`,
+                ])}
+                <div class="table-panel panel">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>이름</th>
+                        <th>스케줄</th>
+                        <th>상태</th>
+                        <th>마지막 실행</th>
+                        <th>다음 실행</th>
+                        <th>요약</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${items.map((job) => `
+                        <tr>
+                          <td><div style="font-weight:800">${escapeHtml(job.name)}</div><div class="muted" style="margin-top:8px; white-space:pre-wrap; line-height:1.65">${escapeHtml(job.description || '-')}</div></td>
+                          <td class="mono">${escapeHtml(job.schedule.expr)}<div class="muted" style="margin-top:6px">${escapeHtml(job.schedule.tz)}</div></td>
+                          <td>${badge(job.status)}</td>
+                          <td>${escapeHtml(job.lastRunLabel || '-')}<div class="muted" style="margin-top:6px">${job.durationMs ? `${Math.round(job.durationMs / 1000)}초` : '-'}</div></td>
+                          <td>${escapeHtml(job.nextRunLabel || '-')}</td>
+                          <td style="white-space:pre-wrap; line-height:1.65">${escapeHtml(job.latestSummary || '-')}</td>
+                        </tr>
+                      `).join('')}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            `).join('') : '<div class="panel"><div class="empty">조건에 맞는 크론이 없습니다.</div></div>'}
           </div>
         `;
       }
@@ -1221,6 +1327,12 @@
           if (state.filters.activityKind !== 'all' && item.kind !== state.filters.activityKind) return false;
           return true;
         });
+        const groupedByAgent = Array.from(groupBy(items, (item) => item.agentId).entries())
+          .map(([agentId, entries]) => ({
+            agent: findAgent(agentId) || { id: agentId, name: agentId, emoji: '🤖' },
+            items: entries,
+          }))
+          .sort((a, b) => (b.items[0]?.timestamp || 0) - (a.items[0]?.timestamp || 0));
 
         return `
           <div class="filter-bar panel">
@@ -1242,17 +1354,28 @@
               <button class="btn btn-primary" id="applyActivityFilters">필터 적용</button>
             </div>
           </div>
-          <div class="activity-list">
-            ${items.length ? items.map((item) => `
-              <div class="activity-item panel">
-                <div class="activity-icon">${item.kind === 'cron' ? '⏰' : item.kind === 'error' ? '⚠️' : '💬'}</div>
-                <div>
-                  <div class="activity-title">${escapeHtml(item.title)}</div>
-                  <div class="muted" style="margin-top:6px">${escapeHtml(findAgent(item.agentId)?.name || item.agentId)} · ${escapeHtml(item.channel || '-')} · ${escapeHtml(item.relative || '-')}</div>
-                  <div class="activity-body">${escapeHtml(item.body || '-')}</div>
+          <div class="agent-group-list">
+            ${groupedByAgent.length ? groupedByAgent.map(({ agent, items }) => `
+              <section class="agent-group">
+                ${agentSectionHeader(agent, `${numFmt.format(items.length)}개 활동`, [
+                  `<span class="badge purple">세션 ${numFmt.format(items.filter((item) => item.kind === 'session').length)}</span>`,
+                  `<span class="badge warn">크론 ${numFmt.format(items.filter((item) => item.kind === 'cron').length)}</span>`,
+                  `<span class="badge err">오류 ${numFmt.format(items.filter((item) => item.kind === 'error').length)}</span>`,
+                ])}
+                <div class="activity-list">
+                  ${items.map((item) => `
+                    <div class="activity-item panel">
+                      <div class="activity-icon">${item.kind === 'cron' ? '⏰' : item.kind === 'error' ? '⚠️' : '💬'}</div>
+                      <div>
+                        <div class="activity-title">${escapeHtml(item.title)}</div>
+                        <div class="muted" style="margin-top:6px">${escapeHtml(item.channel || '-')} · ${escapeHtml(item.relative || '-')}</div>
+                        <div class="activity-body">${escapeHtml(item.body || '-')}</div>
+                      </div>
+                      <div>${badge(item.status)}</div>
+                    </div>
+                  `).join('')}
                 </div>
-                <div>${badge(item.status)}</div>
-              </div>
+              </section>
             `).join('') : '<div class="panel"><div class="empty">활동 로그가 없습니다.</div></div>'}
           </div>
         `;
@@ -1260,8 +1383,6 @@
 
       function renderAgentDetail(agent) {
         if (!agent) return '<div class="panel"><div class="empty">에이전트를 찾지 못했습니다.</div></div>';
-        const currentTab = state.fileTabMap[agent.id] || 'SOUL.md';
-        const currentFile = agent.promptFiles.find((file) => file.name === currentTab) || agent.promptFiles[0];
 
         return `
           <div class="agent-strip" style="grid-template-columns:1fr; margin-bottom:0">
@@ -1282,23 +1403,15 @@
                 <div class="metric-box"><div class="k">크론</div><div class="v">${numFmt.format(agent.counts.cronJobs || 0)}</div></div>
                 <div class="metric-box"><div class="k">오류 크론</div><div class="v">${numFmt.format(agent.counts.errorCrons || 0)}</div></div>
               </div>
+              <div style="display:flex; justify-content:flex-end; gap:10px">
+                <button class="btn btn-secondary" data-open-agent="${escapeHtml(agent.id)}">대표설정 파일 보기</button>
+              </div>
             </div>
           </div>
 
-          <div class="settings-grid">
-            <div class="file-box panel">
-              <div class="section-title"><h3>대표 설정 파일</h3><button class="btn btn-secondary" data-open-agent="${escapeHtml(agent.id)}">모달로 보기</button></div>
-              <div class="file-tabs">
-                ${agent.promptFiles.map((file) => `
-                  <button class="file-tab ${currentTab === file.name ? 'active' : ''}" data-agent-file="${escapeHtml(agent.id)}" data-file-tab="${escapeHtml(file.name)}">${escapeHtml(file.name)}</button>
-                `).join('')}
-              </div>
-              <div class="muted" style="margin-bottom:10px">${escapeHtml(currentFile?.path || '-')}</div>
-              <div class="file-content">${escapeHtml(currentFile?.content || '(파일 없음)')}</div>
-            </div>
-
+          <div class="settings-grid" style="grid-template-columns:1fr;">
             <div class="settings-box panel">
-              <div class="section-title"><h3>대표 설정 요약</h3><span class="muted">읽기 전용</span></div>
+              <div class="section-title"><h3>대표 설정 요약</h3><span class="muted">파일 본문은 모달에서만 표시</span></div>
               <div class="settings-list">
                 <div class="settings-row"><div class="settings-key">모델</div><div>${escapeHtml(agent.model || '-')}</div></div>
                 <div class="settings-row"><div class="settings-key">워크스페이스</div><div class="mono">${escapeHtml(agent.workspace || '-')}</div></div>
