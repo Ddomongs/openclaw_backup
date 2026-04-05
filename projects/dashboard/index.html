@@ -3,482 +3,682 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>또몽이 OpenClaw 세션 대시보드</title>
+    <title>또몽이 OpenClaw 운영 대시보드</title>
     <style>
       :root {
-        --bg: #f7f5ff;
-        --panel: rgba(255, 255, 255, 0.88);
-        --panel-strong: #ffffff;
-        --text: #1f2440;
-        --muted: #70789a;
-        --line: rgba(125, 98, 255, 0.12);
-        --primary: #7c5cff;
-        --primary-2: #a083ff;
-        --danger: #ef5350;
-        --danger-bg: rgba(239, 83, 80, 0.08);
-        --ok: #16a34a;
-        --ok-bg: rgba(22, 163, 74, 0.1);
-        --warn: #d97706;
-        --warn-bg: rgba(217, 119, 6, 0.1);
-        --shadow: 0 20px 50px rgba(65, 47, 140, 0.12);
-        --radius: 20px;
+        --bg: #f5f7fb;
+        --panel: #ffffff;
+        --panel-soft: #f8fafc;
+        --line: #e6ebf3;
+        --line-strong: #d8e0ec;
+        --text: #162033;
+        --muted: #6f7b8f;
+        --primary: #5b8def;
+        --primary-soft: #eef4ff;
+        --green: #17b26a;
+        --green-soft: #eafbf3;
+        --amber: #f59e0b;
+        --amber-soft: #fff5df;
+        --red: #ef4444;
+        --red-soft: #fef1f2;
+        --purple: #8b5cf6;
+        --purple-soft: #f4edff;
+        --shadow: 0 14px 36px rgba(18, 34, 66, 0.08);
+        --radius-xl: 24px;
+        --radius-lg: 18px;
+        --radius-md: 14px;
       }
 
       * { box-sizing: border-box; }
       html, body { margin: 0; padding: 0; }
       body {
         font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Segoe UI", sans-serif;
-        background:
-          radial-gradient(circle at top left, rgba(162, 131, 255, 0.28), transparent 28%),
-          radial-gradient(circle at top right, rgba(255, 182, 193, 0.22), transparent 22%),
-          var(--bg);
         color: var(--text);
+        background: linear-gradient(180deg, #f7f8fc 0%, #eef3fb 100%);
       }
 
-      .layout {
-        max-width: 1480px;
-        margin: 0 auto;
-        padding: 28px;
-      }
+      button, input, select, textarea { font: inherit; }
+      button { cursor: pointer; }
+      a { color: inherit; }
 
-      .hero {
+      .app {
         display: grid;
-        grid-template-columns: 1.2fr 0.8fr;
-        gap: 18px;
-        margin-bottom: 18px;
+        grid-template-columns: 280px minmax(0, 1fr);
+        min-height: 100vh;
       }
 
-      .card {
-        background: var(--panel);
-        backdrop-filter: blur(18px);
-        border: 1px solid rgba(255,255,255,0.7);
-        box-shadow: var(--shadow);
-        border-radius: var(--radius);
+      .sidebar {
+        background: rgba(255,255,255,0.92);
+        border-right: 1px solid var(--line);
+        padding: 28px 18px 20px;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow: auto;
       }
 
-      .hero-main {
-        padding: 26px 28px;
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 12px;
+        margin-bottom: 22px;
       }
 
-      .hero-title {
+      .brand-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 18px;
+        display: grid;
+        place-items: center;
+        font-size: 28px;
+        background: linear-gradient(135deg, #fff5d6, #ffe9ef);
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.8);
+      }
+
+      .brand h1 {
+        margin: 0;
+        font-size: 28px;
+        line-height: 1.1;
+      }
+
+      .brand .sub {
+        margin-top: 4px;
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      .nav-group-title {
+        padding: 10px 14px;
+        font-size: 12px;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: .06em;
+      }
+
+      .nav-list {
+        display: grid;
+        gap: 6px;
+      }
+
+      .nav-item {
+        width: 100%;
+        border: 0;
+        background: transparent;
         display: flex;
         align-items: center;
         gap: 12px;
-        margin-bottom: 8px;
-      }
-
-      .hero-title .emoji {
-        width: 48px;
-        height: 48px;
-        display: grid;
-        place-items: center;
+        padding: 14px 14px;
         border-radius: 16px;
-        background: linear-gradient(135deg, #fff4d6, #ffe8ef);
-        font-size: 24px;
+        text-align: left;
+        color: var(--text);
       }
 
-      h1 {
+      .nav-item:hover { background: #f4f7fd; }
+      .nav-item.active {
+        background: linear-gradient(180deg, #f0f5ff 0%, #eef2ff 100%);
+        box-shadow: inset 3px 0 0 var(--primary);
+      }
+
+      .nav-emoji { width: 26px; text-align: center; font-size: 22px; }
+      .nav-label { flex: 1; font-weight: 700; }
+
+      .count-pill {
+        min-width: 34px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        text-align: center;
+        background: #f4f6fa;
+        color: var(--muted);
+      }
+
+      .count-pill.error { background: var(--red-soft); color: var(--red); }
+
+      .sidebar-footer {
+        margin-top: 26px;
+        padding: 16px 14px;
+        background: var(--panel-soft);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        display: grid;
+        gap: 10px;
+      }
+
+      .footer-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        font-size: 13px;
+      }
+
+      .footer-label { color: var(--muted); }
+      .status-dot {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--green);
+        margin-right: 6px;
+      }
+
+      .main {
+        padding: 28px;
+        min-width: 0;
+      }
+
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        margin-bottom: 22px;
+      }
+
+      .topbar h2 {
         margin: 0;
-        font-size: 28px;
-        line-height: 1.2;
+        font-size: 34px;
+        line-height: 1.1;
       }
 
-      .sub {
+      .page-desc {
+        margin-top: 8px;
         color: var(--muted);
         font-size: 14px;
       }
 
-      .hero-actions {
-        margin-top: 18px;
+      .top-actions {
         display: flex;
-        flex-wrap: wrap;
+        align-items: center;
         gap: 10px;
+        flex-wrap: wrap;
       }
 
-      button,
-      .button-like,
-      select,
-      input {
-        font: inherit;
-      }
-
-      button {
+      .btn {
         border: 0;
         border-radius: 14px;
         padding: 12px 16px;
-        cursor: pointer;
-        transition: transform .12s ease, box-shadow .12s ease, opacity .12s ease;
+        font-weight: 700;
+        transition: transform .12s ease, opacity .12s ease;
       }
 
-      button:hover { transform: translateY(-1px); }
-      button:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+      .btn:hover { transform: translateY(-1px); }
+      .btn:disabled { opacity: .55; cursor: not-allowed; transform: none; }
+      .btn-primary { background: linear-gradient(135deg, var(--primary), #7ea6ff); color: #fff; }
+      .btn-secondary { background: #f3f6fb; color: var(--text); }
+      .btn-danger { background: var(--red-soft); color: var(--red); }
 
-      .btn-primary {
-        background: linear-gradient(135deg, var(--primary), var(--primary-2));
-        color: #fff;
-        box-shadow: 0 12px 26px rgba(124, 92, 255, 0.25);
+      .panel {
+        background: var(--panel);
+        border: 1px solid rgba(221,229,240,.92);
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow);
       }
 
-      .btn-secondary {
-        background: rgba(124, 92, 255, 0.08);
-        color: var(--primary);
-      }
-
-      .btn-danger {
-        background: var(--danger-bg);
-        color: var(--danger);
-      }
-
-      .hero-side {
-        padding: 22px;
+      .stats-grid {
         display: grid;
-        gap: 14px;
-      }
-
-      .url-box {
-        background: rgba(124, 92, 255, 0.06);
-        border: 1px solid rgba(124, 92, 255, 0.08);
-        border-radius: 16px;
-        padding: 14px 16px;
-      }
-
-      .url-box strong { display: block; margin-bottom: 6px; }
-      .url-box code { font-size: 13px; word-break: break-all; }
-
-      .stats {
-        display: grid;
-        grid-template-columns: repeat(5, 1fr);
+        grid-template-columns: repeat(4, 1fr);
         gap: 14px;
         margin-bottom: 18px;
       }
 
       .stat-card {
-        padding: 18px 20px;
+        padding: 20px 22px;
       }
 
-      .stat-card .label {
-        font-size: 13px;
-        color: var(--muted);
-        margin-bottom: 12px;
-      }
+      .stat-label { color: var(--muted); font-size: 13px; margin-bottom: 10px; }
+      .stat-value { font-size: 32px; font-weight: 800; }
+      .stat-hint { margin-top: 6px; color: var(--muted); font-size: 12px; }
 
-      .stat-card .value {
-        font-size: 28px;
-        font-weight: 700;
-      }
-
-      .stat-card .hint {
-        margin-top: 6px;
-        font-size: 12px;
-        color: var(--muted);
-      }
-
-      .controls {
-        padding: 18px;
+      .agent-strip {
         display: grid;
-        grid-template-columns: 1.5fr repeat(4, minmax(120px, 180px)) auto;
-        gap: 12px;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 14px;
         margin-bottom: 18px;
       }
 
-      .field {
+      .agent-card {
+        padding: 20px 22px;
         display: grid;
-        gap: 8px;
+        gap: 14px;
       }
 
-      .field label {
-        font-size: 12px;
-        color: var(--muted);
+      .agent-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
       }
 
-      .field input,
-      .field select {
-        border-radius: 14px;
-        border: 1px solid var(--line);
-        background: rgba(255,255,255,0.85);
-        padding: 12px 14px;
-        outline: none;
+      .agent-id {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
       }
 
-      .table-wrap {
-        overflow: hidden;
+      .agent-emoji {
+        width: 52px;
+        height: 52px;
+        border-radius: 16px;
+        background: #f4f7fc;
+        display: grid;
+        place-items: center;
+        font-size: 28px;
       }
 
-      table {
-        width: 100%;
-        border-collapse: collapse;
-      }
-
-      thead th {
-        text-align: left;
-        font-size: 12px;
-        color: var(--muted);
-        font-weight: 600;
-        padding: 14px 16px;
-        border-bottom: 1px solid var(--line);
-      }
-
-      tbody td {
-        padding: 14px 16px;
-        border-bottom: 1px solid rgba(125, 98, 255, 0.08);
-        vertical-align: top;
-        font-size: 14px;
-      }
-
-      tbody tr:hover { background: rgba(124, 92, 255, 0.04); }
-
-      .session-name {
-        font-weight: 700;
-        margin-bottom: 5px;
-      }
-
-      .tiny {
-        font-size: 12px;
-        color: var(--muted);
-        line-height: 1.45;
-      }
+      .agent-name { font-weight: 800; font-size: 22px; }
+      .agent-meta { color: var(--muted); font-size: 13px; margin-top: 4px; }
 
       .badge {
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        padding: 6px 10px;
+        padding: 7px 10px;
         border-radius: 999px;
         font-size: 12px;
         font-weight: 700;
         white-space: nowrap;
       }
 
-      .badge.ok { color: var(--ok); background: var(--ok-bg); }
-      .badge.warn { color: var(--warn); background: var(--warn-bg); }
-      .badge.danger { color: var(--danger); background: var(--danger-bg); }
-      .badge.primary { color: var(--primary); background: rgba(124, 92, 255, 0.1); }
+      .badge.ok { background: var(--green-soft); color: var(--green); }
+      .badge.run { background: var(--primary-soft); color: var(--primary); }
+      .badge.warn { background: var(--amber-soft); color: #b77b00; }
+      .badge.err { background: var(--red-soft); color: var(--red); }
+      .badge.purple { background: var(--purple-soft); color: var(--purple); }
 
-      .actions {
+      .agent-metrics {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+      }
+
+      .metric-box {
+        background: var(--panel-soft);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 12px 14px;
+      }
+
+      .metric-box .k { font-size: 11px; color: var(--muted); }
+      .metric-box .v { margin-top: 6px; font-size: 18px; font-weight: 800; }
+
+      .section-title {
         display: flex;
-        justify-content: flex-end;
-        gap: 8px;
-      }
-
-      .icon-btn {
-        padding: 10px 12px;
-        min-width: 44px;
-      }
-
-      .footer-note {
-        margin-top: 14px;
-        color: var(--muted);
-        font-size: 12px;
-      }
-
-      .topline {
-        display: flex;
-        justify-content: space-between;
         align-items: center;
-        padding: 20px 22px 10px;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
       }
 
-      .topline h2 {
+      .section-title h3 {
         margin: 0;
-        font-size: 20px;
+        font-size: 22px;
       }
 
       .empty {
-        padding: 40px 24px;
+        padding: 28px;
         text-align: center;
         color: var(--muted);
+      }
+
+      .warning-list,
+      .activity-list,
+      .channel-list,
+      .session-list,
+      .work-columns {
+        display: grid;
+        gap: 14px;
+      }
+
+      .warning-panel,
+      .activity-item,
+      .channel-card,
+      .session-item,
+      .work-column,
+      .file-box,
+      .settings-box,
+      .filter-bar,
+      .table-panel {
+        border: 1px solid var(--line);
+        background: var(--panel);
+        border-radius: var(--radius-lg);
+      }
+
+      .warning-panel,
+      .activity-item,
+      .channel-card,
+      .filter-bar,
+      .table-panel,
+      .settings-box,
+      .file-box { box-shadow: var(--shadow); }
+
+      .warning-panel { padding: 18px 20px; }
+      .warning-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+      .warning-summary { color: var(--muted); margin-top: 8px; line-height: 1.55; }
+
+      .channel-card { overflow: hidden; }
+      .channel-head {
+        padding: 18px 20px;
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .channel-meta { color: var(--muted); font-size: 13px; margin-top: 4px; }
+
+      .session-item {
+        padding: 16px 18px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 14px;
+        align-items: center;
+      }
+
+      .session-item + .session-item { border-top: 1px solid var(--line); }
+      .session-title { display: flex; align-items: center; gap: 10px; min-width: 0; }
+      .session-title strong { font-size: 17px; }
+      .session-preview { margin-top: 8px; color: var(--muted); line-height: 1.55; }
+      .session-sub { margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap; }
+      .session-actions { display: flex; gap: 8px; align-items: center; }
+      .ghost-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        border: 0;
+        background: #f5f7fb;
+        font-size: 18px;
+      }
+
+      .filter-bar {
+        padding: 16px;
+        margin-bottom: 16px;
+        display: grid;
+        grid-template-columns: 1.4fr repeat(3, 180px) auto;
+        gap: 12px;
+      }
+
+      .field { display: grid; gap: 8px; }
+      .field label { font-size: 12px; color: var(--muted); }
+      .field input,
+      .field select {
+        padding: 12px 14px;
+        border-radius: 14px;
+        border: 1px solid var(--line-strong);
+        background: #fff;
+        outline: none;
+      }
+
+      .table-panel { overflow: hidden; }
+      table { width: 100%; border-collapse: collapse; }
+      thead th {
+        text-align: left;
+        padding: 14px 16px;
+        color: var(--muted);
+        font-size: 12px;
+        border-bottom: 1px solid var(--line);
+      }
+      tbody td {
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--line);
+        vertical-align: top;
+        font-size: 14px;
+      }
+      tbody tr:hover { background: #f8fbff; }
+
+      .activity-item {
+        padding: 18px 20px;
+        display: grid;
+        grid-template-columns: auto minmax(0,1fr) auto;
+        gap: 14px;
+        align-items: start;
+      }
+      .activity-icon {
+        width: 46px;
+        height: 46px;
+        border-radius: 16px;
+        display: grid;
+        place-items: center;
+        background: #f5f7fb;
+        font-size: 22px;
+      }
+      .activity-title { font-weight: 800; }
+      .activity-body { margin-top: 8px; color: var(--muted); line-height: 1.6; }
+
+      .settings-grid {
+        display: grid;
+        grid-template-columns: 1.1fr .9fr;
+        gap: 16px;
+        margin-top: 16px;
+      }
+
+      .settings-box,
+      .file-box {
+        padding: 18px 20px;
+      }
+
+      .settings-list {
+        display: grid;
+        gap: 12px;
+        margin-top: 12px;
+      }
+
+      .settings-row {
+        display: grid;
+        grid-template-columns: 110px minmax(0,1fr);
+        gap: 10px;
+        font-size: 14px;
+      }
+
+      .settings-key { color: var(--muted); }
+      .mono {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        word-break: break-all;
+      }
+
+      .file-tabs {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 12px;
+      }
+
+      .file-tab {
+        border: 0;
+        background: #f3f6fb;
+        color: var(--muted);
+        padding: 9px 12px;
+        border-radius: 12px;
+        font-weight: 700;
+      }
+      .file-tab.active { background: var(--primary-soft); color: var(--primary); }
+
+      .file-content {
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: #0f1728;
+        color: #dce5f6;
+        padding: 16px;
+        min-height: 320px;
+        max-height: 440px;
+        overflow: auto;
+        white-space: pre-wrap;
+        line-height: 1.55;
+        font-size: 13px;
+      }
+
+      .work-columns {
+        grid-template-columns: repeat(3, minmax(0,1fr));
+        margin-top: 18px;
+      }
+      .work-column { padding: 16px; }
+      .work-column h4 { margin: 0 0 12px; font-size: 18px; }
+      .work-card {
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 14px;
+        background: var(--panel-soft);
+        margin-bottom: 10px;
+      }
+      .work-card:last-child { margin-bottom: 0; }
+      .work-title { font-weight: 800; }
+      .work-sub { margin-top: 6px; color: var(--muted); line-height: 1.5; font-size: 13px; }
+
+      .inline-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .muted { color: var(--muted); }
+
+      .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 40, 0.42);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 18px;
+        z-index: 50;
+      }
+      .modal-backdrop.show { display: flex; }
+
+      .modal {
+        width: min(1080px, 100%);
+        max-height: calc(100vh - 36px);
+        overflow: auto;
+        background: #fff;
+        border-radius: 26px;
+        box-shadow: 0 30px 80px rgba(15, 23, 40, 0.22);
+        border: 1px solid var(--line);
+      }
+
+      .modal-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .modal-body { padding: 22px 24px 24px; }
+      .close-btn {
+        width: 42px; height: 42px; border-radius: 12px; border: 0; background: #f4f7fb; font-size: 20px;
       }
 
       .toast {
         position: fixed;
         right: 20px;
         bottom: 20px;
-        background: rgba(31, 36, 64, 0.96);
+        background: rgba(15, 23, 40, 0.95);
         color: #fff;
         padding: 14px 16px;
         border-radius: 14px;
-        box-shadow: var(--shadow);
-        min-width: 280px;
-        max-width: 420px;
+        min-width: 260px;
         opacity: 0;
-        pointer-events: none;
-        transform: translateY(14px);
+        transform: translateY(10px);
         transition: all .18s ease;
-        z-index: 50;
+        pointer-events: none;
+        z-index: 60;
+      }
+      .toast.show { opacity: 1; transform: translateY(0); }
+
+      @media (max-width: 1280px) {
+        .stats-grid { grid-template-columns: repeat(2, 1fr); }
+        .filter-bar { grid-template-columns: 1fr 1fr; }
+        .settings-grid, .work-columns { grid-template-columns: 1fr; }
       }
 
-      .toast.show {
-        opacity: 1;
-        pointer-events: auto;
-        transform: translateY(0);
+      @media (max-width: 980px) {
+        .app { grid-template-columns: 1fr; }
+        .sidebar {
+          position: static;
+          height: auto;
+          border-right: 0;
+          border-bottom: 1px solid var(--line);
+        }
+        .main { padding: 18px; }
       }
 
-      .modal-backdrop {
-        position: fixed;
-        inset: 0;
-        background: rgba(20, 22, 34, 0.38);
-        display: none;
-        align-items: center;
-        justify-content: center;
-        padding: 20px;
-        z-index: 40;
-      }
-
-      .modal-backdrop.show { display: flex; }
-
-      .modal {
-        width: min(520px, 100%);
-        padding: 24px;
-      }
-
-      .modal h3 { margin-top: 0; margin-bottom: 8px; }
-      .modal .modal-body {
-        color: var(--muted);
-        line-height: 1.6;
-        margin-bottom: 18px;
-      }
-
-      .modal-actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: 10px;
-      }
-
-      .mono {
-        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-        font-size: 12px;
-        word-break: break-all;
-      }
-
-      @media (max-width: 1200px) {
-        .stats { grid-template-columns: repeat(2, 1fr); }
-        .controls { grid-template-columns: 1fr 1fr; }
-      }
-
-      @media (max-width: 920px) {
-        .hero { grid-template-columns: 1fr; }
-        .controls { grid-template-columns: 1fr; }
-        .stats { grid-template-columns: 1fr 1fr; }
-      }
-
-      @media (max-width: 700px) {
-        .layout { padding: 16px; }
-        .stats { grid-template-columns: 1fr; }
-        .table-wrap { overflow-x: auto; }
+      @media (max-width: 760px) {
+        .stats-grid, .agent-strip, .agent-metrics { grid-template-columns: 1fr; }
+        .session-item, .activity-item { grid-template-columns: 1fr; }
+        .topbar { flex-direction: column; align-items: flex-start; }
+        .filter-bar { grid-template-columns: 1fr; }
+        table { min-width: 900px; }
+        .table-panel { overflow: auto; }
       }
     </style>
   </head>
   <body>
-    <div class="layout">
-      <section class="hero">
-        <div class="card hero-main">
-          <div class="hero-title">
-            <div class="emoji">🐶</div>
-            <div>
-              <h1>또몽이 OpenClaw 세션 대시보드</h1>
-              <div class="sub">활성 세션 확인 · 삭제 버튼으로 세션 정리 · 메모리 재색인 · 아카이브 이동</div>
-            </div>
-          </div>
-          <div class="hero-actions">
-            <button class="btn-primary" id="refreshButton">새로고침</button>
-            <button class="btn-secondary" id="activeOnlyButton">활성 세션만 보기</button>
-            <button class="btn-secondary" id="allButton">전체 저장 세션 보기</button>
-          </div>
-          <div class="footer-note">삭제 버튼을 누르면 <strong>chat.abort → sessions.delete → archive 이동 → memory index</strong> 순서로 처리합니다.</div>
-        </div>
-
-        <div class="card hero-side">
-          <div class="url-box">
-            <strong>로컬 접속</strong>
-            <code id="localUrl">불러오는 중…</code>
-          </div>
-          <div class="url-box">
-            <strong>Tailscale 접속</strong>
-            <div id="tailscaleBox" class="sub">확인 중…</div>
-          </div>
-          <div class="url-box">
-            <strong>세션 아카이브 정책</strong>
-            <div class="sub">각 에이전트의 <code>sessions/_archive/YYYY-MM/</code> 아래로 이동합니다.</div>
-          </div>
-        </div>
-      </section>
-
-      <section class="stats" id="stats"></section>
-
-      <section class="card controls">
-        <div class="field">
-          <label for="searchInput">검색</label>
-          <input id="searchInput" placeholder="세션 키, 채널, 모델, 표시명 검색" />
-        </div>
-        <div class="field">
-          <label for="scopeSelect">범위</label>
-          <select id="scopeSelect">
-            <option value="all">전체 저장 세션</option>
-            <option value="active">활성 세션만</option>
-          </select>
-        </div>
-        <div class="field">
-          <label for="agentSelect">에이전트</label>
-          <select id="agentSelect"><option value="all">전체</option></select>
-        </div>
-        <div class="field">
-          <label for="statusSelect">상태</label>
-          <select id="statusSelect">
-            <option value="all">전체</option>
-            <option value="running">실행 중</option>
-            <option value="idle">활성(유휴 포함)</option>
-            <option value="stored">저장 세션만</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>&nbsp;</label>
-          <button class="btn-primary" id="filterButton">조회</button>
-        </div>
-        <div class="field">
-          <label>&nbsp;</label>
-          <button class="btn-secondary" id="resetButton">필터 초기화</button>
-        </div>
-      </section>
-
-      <section class="card table-wrap">
-        <div class="topline">
+    <div class="app">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-icon">🐶</div>
           <div>
-            <h2>세션 목록</h2>
-            <div class="sub" id="resultSummary">불러오는 중…</div>
+            <h1>또몽이 대시보드</h1>
+            <div class="sub">OpenClaw 운영 모니터링</div>
           </div>
-          <div class="sub" id="lastUpdated">-</div>
         </div>
-        <table>
-          <thead>
-            <tr>
-              <th style="min-width:300px">세션</th>
-              <th>에이전트</th>
-              <th>상태</th>
-              <th>업데이트</th>
-              <th>채널 / 유형</th>
-              <th>모델 / 토큰</th>
-              <th>파일</th>
-              <th style="width:140px; text-align:right">정리</th>
-            </tr>
-          </thead>
-          <tbody id="sessionTableBody">
-            <tr><td colspan="8" class="empty">불러오는 중…</td></tr>
-          </tbody>
-        </table>
-      </section>
+
+        <div class="nav-group-title">모니터링</div>
+        <div class="nav-list" id="mainNav"></div>
+
+        <div class="nav-group-title" style="margin-top:16px">에이전트</div>
+        <div class="nav-list" id="agentNav"></div>
+
+        <div class="sidebar-footer" id="sidebarFooter"></div>
+      </aside>
+
+      <main class="main">
+        <div class="topbar">
+          <div>
+            <h2 id="pageTitle">불러오는 중…</h2>
+            <div class="page-desc" id="pageDesc">대시보드 데이터를 가져오는 중입니다.</div>
+          </div>
+          <div class="top-actions">
+            <span class="muted" id="updatedAt">-</span>
+            <button class="btn btn-secondary" id="forceRefreshBtn">강제 새로고침</button>
+            <button class="btn btn-primary" id="refreshBtn">새로고침</button>
+          </div>
+        </div>
+
+        <div id="content"></div>
+      </main>
     </div>
 
-    <div class="modal-backdrop" id="modalBackdrop">
-      <div class="card modal">
-        <h3>이 세션을 정리할까요?</h3>
+    <div class="modal-backdrop" id="deleteModalBackdrop">
+      <div class="modal" style="max-width:560px">
+        <div class="modal-header">
+          <div>
+            <div style="font-size:24px; font-weight:800">세션을 정리할까요?</div>
+            <div class="page-desc">삭제 전 session abort, transcript archive, memory reindex를 순서대로 시도합니다.</div>
+          </div>
+          <button class="close-btn" id="deleteModalClose">×</button>
+        </div>
         <div class="modal-body">
-          <div id="modalMessage">-</div>
-          <div style="margin-top:12px" class="mono" id="modalKey"></div>
+          <div id="deleteModalBody" class="muted" style="line-height:1.7"></div>
+          <div class="mono" id="deleteModalKey" style="margin-top:14px"></div>
+          <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px">
+            <button class="btn btn-secondary" id="deleteCancelBtn">취소</button>
+            <button class="btn btn-danger" id="deleteConfirmBtn">삭제 + 아카이브</button>
+          </div>
         </div>
-        <div class="modal-actions">
-          <button class="btn-secondary" id="cancelDeleteButton">취소</button>
-          <button class="btn-danger" id="confirmDeleteButton">삭제 + 아카이브</button>
+      </div>
+    </div>
+
+    <div class="modal-backdrop" id="agentModalBackdrop">
+      <div class="modal">
+        <div class="modal-header">
+          <div id="agentModalHeader"></div>
+          <button class="close-btn" id="agentModalClose">×</button>
         </div>
+        <div class="modal-body" id="agentModalBody"></div>
       </div>
     </div>
 
@@ -486,43 +686,49 @@
 
     <script>
       const state = {
-        scope: 'all',
-        agent: 'all',
-        status: 'all',
-        query: '',
-        agents: [],
-        sessions: [],
-        overview: null,
+        dashboard: null,
+        view: { type: 'overview', agentId: null },
+        filters: {
+          sessionQuery: '',
+          sessionAgent: 'all',
+          sessionStatus: 'all',
+          sessionChannel: 'all',
+          cronQuery: '',
+          cronStatus: 'all',
+          cronAgent: 'all',
+          activityQuery: '',
+          activityKind: 'all',
+        },
         deleteTarget: null,
+        agentModalTarget: null,
+        fileTabMap: {},
       };
 
       const els = {
-        stats: document.getElementById('stats'),
-        localUrl: document.getElementById('localUrl'),
-        tailscaleBox: document.getElementById('tailscaleBox'),
-        resultSummary: document.getElementById('resultSummary'),
-        lastUpdated: document.getElementById('lastUpdated'),
-        sessionTableBody: document.getElementById('sessionTableBody'),
-        scopeSelect: document.getElementById('scopeSelect'),
-        agentSelect: document.getElementById('agentSelect'),
-        statusSelect: document.getElementById('statusSelect'),
-        searchInput: document.getElementById('searchInput'),
-        modalBackdrop: document.getElementById('modalBackdrop'),
-        modalMessage: document.getElementById('modalMessage'),
-        modalKey: document.getElementById('modalKey'),
+        mainNav: document.getElementById('mainNav'),
+        agentNav: document.getElementById('agentNav'),
+        sidebarFooter: document.getElementById('sidebarFooter'),
+        pageTitle: document.getElementById('pageTitle'),
+        pageDesc: document.getElementById('pageDesc'),
+        updatedAt: document.getElementById('updatedAt'),
+        content: document.getElementById('content'),
+        refreshBtn: document.getElementById('refreshBtn'),
+        forceRefreshBtn: document.getElementById('forceRefreshBtn'),
+        deleteModalBackdrop: document.getElementById('deleteModalBackdrop'),
+        deleteModalBody: document.getElementById('deleteModalBody'),
+        deleteModalKey: document.getElementById('deleteModalKey'),
+        deleteConfirmBtn: document.getElementById('deleteConfirmBtn'),
+        deleteCancelBtn: document.getElementById('deleteCancelBtn'),
+        deleteModalClose: document.getElementById('deleteModalClose'),
+        agentModalBackdrop: document.getElementById('agentModalBackdrop'),
+        agentModalHeader: document.getElementById('agentModalHeader'),
+        agentModalBody: document.getElementById('agentModalBody'),
+        agentModalClose: document.getElementById('agentModalClose'),
         toast: document.getElementById('toast'),
       };
 
-      const numberFmt = new Intl.NumberFormat('ko-KR');
-      const moneyFmt = new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'USD', maximumFractionDigits: 3 });
-
-      function showToast(message, type = 'info') {
-        els.toast.textContent = message;
-        els.toast.style.background = type === 'error' ? 'rgba(180, 34, 34, 0.96)' : 'rgba(31, 36, 64, 0.96)';
-        els.toast.classList.add('show');
-        clearTimeout(showToast.timer);
-        showToast.timer = setTimeout(() => els.toast.classList.remove('show'), 3000);
-      }
+      const numFmt = new Intl.NumberFormat('ko-KR');
+      const usdFmt = new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'USD', maximumFractionDigits: 3 });
 
       function escapeHtml(value) {
         return String(value ?? '')
@@ -533,237 +739,823 @@
           .replaceAll("'", '&#39;');
       }
 
+      function showToast(message, kind = 'info') {
+        els.toast.textContent = message;
+        els.toast.style.background = kind === 'error' ? 'rgba(180,34,34,.96)' : 'rgba(15,23,40,.95)';
+        els.toast.classList.add('show');
+        clearTimeout(showToast._timer);
+        showToast._timer = setTimeout(() => els.toast.classList.remove('show'), 3200);
+      }
+
       async function fetchJson(url, options) {
         const response = await fetch(url, options);
         const data = await response.json();
-        if (!response.ok || data.ok === false) {
-          throw new Error(data.error || '요청 실패');
-        }
+        if (!response.ok || data.ok === false) throw new Error(data.error || '요청 실패');
         return data;
       }
 
-      function renderStats() {
-        const overview = state.overview;
-        if (!overview) return;
-        const cards = [
-          ['활성 세션', overview.counts.activeSessions, 'Gateway 기준 현재 잡히는 세션'],
-          ['실행 중', overview.counts.runningSessions, 'status=running 세션'],
-          ['저장 세션', overview.counts.storedSessions, 'sessions.json 기준'],
-          ['아카이브 파일', overview.counts.archivedFiles, '삭제 후 이동된 transcript'],
-          ['에이전트', overview.counts.agents, '세션 저장소가 있는 agent'],
+      function badge(status) {
+        if (status === 'running') return '<span class="badge run">● 작업 중</span>';
+        if (status === 'active') return '<span class="badge ok">● 활성</span>';
+        if (status === 'ok') return '<span class="badge ok">정상</span>';
+        if (status === 'error') return '<span class="badge err">오류</span>';
+        if (status === 'disabled') return '<span class="badge warn">비활성</span>';
+        return '<span class="badge warn">대기</span>';
+      }
+
+      function currency(value) {
+        if (typeof value !== 'number') return '-';
+        return usdFmt.format(value);
+      }
+
+      function findAgent(agentId) {
+        return state.dashboard?.agents?.find((agent) => agent.id === agentId) || null;
+      }
+
+      function navItems() {
+        const sidebar = state.dashboard?.sidebar || {};
+        const cronErrorCount = state.dashboard?.overview?.counts?.cronErrors || 0;
+        return [
+          { key: 'overview', emoji: '📊', label: '개요', count: sidebar.overviewCount || 0 },
+          { key: 'sessions', emoji: '💬', label: '세션', count: sidebar.sessionsCount || 0 },
+          { key: 'cron', emoji: '⏰', label: '크론 잡', count: sidebar.cronCount || 0, danger: cronErrorCount > 0 },
+          { key: 'activity', emoji: '🧾', label: '활동 로그', count: sidebar.activityCount || 0 },
         ];
-        els.stats.innerHTML = cards.map(([label, value, hint]) => `
-          <div class="card stat-card">
-            <div class="label">${label}</div>
-            <div class="value">${numberFmt.format(value)}</div>
-            <div class="hint">${hint}</div>
-          </div>
-        `).join('');
-
-        els.localUrl.textContent = overview.localUrl;
-        if (!overview.tailscale.installed) {
-          els.tailscaleBox.innerHTML = '<span class="badge warn">미설치</span> <span class="sub">현재 Tailscale이 설치되어 있지 않습니다.</span>';
-        } else if (!overview.tailscale.active) {
-          els.tailscaleBox.innerHTML = '<span class="badge warn">대기</span> <span class="sub">설치는 되어 있지만 활성 IP가 없습니다.</span>';
-        } else {
-          els.tailscaleBox.innerHTML = overview.tailscale.urls.map((url) => `<div class="mono" style="margin-top:6px">${escapeHtml(url)}</div>`).join('');
-        }
       }
 
-      function renderAgentOptions() {
-        const options = ['<option value="all">전체</option>']
-          .concat(state.agents.map((agent) => `<option value="${escapeHtml(agent)}">${escapeHtml(agent)}</option>`));
-        els.agentSelect.innerHTML = options.join('');
-        els.agentSelect.value = state.agent;
-      }
-
-      function statusBadge(session) {
-        if (session.liveStatus === 'running') return '<span class="badge ok">● 실행 중</span>';
-        if (session.active) return '<span class="badge primary">● 활성</span>';
-        return '<span class="badge warn">보관 전 저장</span>';
-      }
-
-      function modelCell(session) {
-        const lines = [];
-        if (session.model) lines.push(`<div>${escapeHtml(session.model)}</div>`);
-        if (typeof session.totalTokens === 'number') lines.push(`<div class="tiny">토큰 ${numberFmt.format(session.totalTokens)}</div>`);
-        if (typeof session.estimatedCostUsd === 'number') lines.push(`<div class="tiny">비용 ${escapeHtml(moneyFmt.format(session.estimatedCostUsd))}</div>`);
-        return lines.length ? lines.join('') : '<span class="tiny">-</span>';
-      }
-
-      function renderTable() {
-        const rows = state.sessions;
-        els.resultSummary.textContent = `총 ${numberFmt.format(rows.length)}개 세션`;
-        els.lastUpdated.textContent = `마지막 조회: ${new Date().toLocaleString('ko-KR')}`;
-
-        if (!rows.length) {
-          els.sessionTableBody.innerHTML = '<tr><td colspan="8" class="empty">조건에 맞는 세션이 없습니다.</td></tr>';
-          return;
-        }
-
-        els.sessionTableBody.innerHTML = rows.map((session) => {
-          const name = escapeHtml(session.displayName || session.key);
-          const key = escapeHtml(session.key);
-          const origin = escapeHtml(session.origin?.label || session.origin?.from || '-');
-          const channel = escapeHtml(session.lastChannel || '-');
-          const kind = escapeHtml(session.kind || '-');
-          const file = session.sessionFile ? `<div class="mono">${escapeHtml(session.sessionFile)}</div>` : '<span class="tiny">-</span>';
-          const fileMeta = session.sessionFileExists
-            ? `<div class="tiny">${escapeHtml(session.sessionFileSizeLabel)}</div>`
-            : '<div class="tiny">파일 없음</div>';
+      function renderSidebar() {
+        const main = navItems();
+        els.mainNav.innerHTML = main.map((item) => {
+          const active = state.view.type === item.key ? 'active' : '';
+          const countClass = item.danger ? 'count-pill error' : 'count-pill';
           return `
-            <tr>
-              <td>
-                <div class="session-name">${name}</div>
-                <div class="tiny">${origin}</div>
-                <div class="tiny mono" style="margin-top:6px">${key}</div>
-              </td>
-              <td>
-                <div>${escapeHtml(session.agentId)}</div>
-                <div class="tiny">${escapeHtml(session.sessionId || '-')}</div>
-              </td>
-              <td>${statusBadge(session)}</td>
-              <td>
-                <div>${escapeHtml(session.updatedAtLabel || '-')}</div>
-                <div class="tiny">${escapeHtml(session.updatedAtIso || '-')}</div>
-              </td>
-              <td>
-                <div>${channel}</div>
-                <div class="tiny">${kind} / ${escapeHtml(session.chatType || '-')}</div>
-              </td>
-              <td>${modelCell(session)}</td>
-              <td>${file}${fileMeta}</td>
-              <td>
-                <div class="actions">
-                  <button class="icon-btn btn-danger delete-button" data-key="${key}" title="세션 삭제">🗑️</button>
-                </div>
-              </td>
-            </tr>
+            <button class="nav-item ${active}" data-nav="${item.key}">
+              <span class="nav-emoji">${item.emoji}</span>
+              <span class="nav-label">${item.label}</span>
+              <span class="${countClass}">${numFmt.format(item.count || 0)}</span>
+            </button>
           `;
         }).join('');
 
-        document.querySelectorAll('.delete-button').forEach((button) => {
+        els.agentNav.innerHTML = (state.dashboard?.agents || []).map((agent) => {
+          const active = state.view.type === 'agent' && state.view.agentId === agent.id ? 'active' : '';
+          return `
+            <button class="nav-item ${active}" data-agent-nav="${escapeHtml(agent.id)}">
+              <span class="nav-emoji">${escapeHtml(agent.emoji)}</span>
+              <span class="nav-label">${escapeHtml(agent.name)}</span>
+              <span class="count-pill">${numFmt.format(agent.counts?.activeSessions || 0)}</span>
+            </button>
+          `;
+        }).join('');
+
+        const overview = state.dashboard?.overview;
+        els.sidebarFooter.innerHTML = `
+          <div class="footer-row"><span class="footer-label">로컬</span><strong>${escapeHtml(overview?.localUrl || '-')}</strong></div>
+          <div class="footer-row"><span class="footer-label">게이트웨이</span><strong>${escapeHtml(overview?.gateway?.mode || '-')} / ${escapeHtml(overview?.gateway?.bind || '-')}</strong></div>
+          <div class="footer-row"><span class="footer-label">크론</span><strong>${numFmt.format(overview?.counts?.cronJobs || 0)}개</strong></div>
+          <div class="footer-row"><span class="footer-label">아카이브</span><strong>${numFmt.format(overview?.counts?.archivedFiles || 0)}개</strong></div>
+          <div class="footer-row"><span class="footer-label">상태</span><strong><span class="status-dot"></span>정상</strong></div>
+        `;
+
+        document.querySelectorAll('[data-nav]').forEach((button) => {
           button.addEventListener('click', () => {
-            const key = button.dataset.key;
-            const session = state.sessions.find((item) => item.key === key);
-            openDeleteModal(session);
+            state.view = { type: button.dataset.nav, agentId: null };
+            renderApp();
+          });
+        });
+        document.querySelectorAll('[data-agent-nav]').forEach((button) => {
+          button.addEventListener('click', () => {
+            state.view = { type: 'agent', agentId: button.dataset.agentNav };
+            renderApp();
           });
         });
       }
 
-      function openDeleteModal(session) {
+      function statCard(label, value, hint) {
+        return `
+          <div class="panel stat-card">
+            <div class="stat-label">${label}</div>
+            <div class="stat-value">${value}</div>
+            <div class="stat-hint">${hint}</div>
+          </div>
+        `;
+      }
+
+      function sessionCard(session) {
+        return `
+          <div class="session-item">
+            <div>
+              <div class="session-title">
+                <span style="font-size:24px">${escapeHtml(session.agentEmoji || '🤖')}</span>
+                <div style="min-width:0">
+                  <strong>${escapeHtml(session.displayName || session.key)}</strong>
+                  <div class="muted" style="margin-top:4px">${escapeHtml(session.agentName || session.agentId)} · ${escapeHtml(session.channelLabel || '-')}</div>
+                </div>
+              </div>
+              <div class="session-preview">${escapeHtml(session.preview || '(미리보기 없음)')}</div>
+              <div class="session-sub">
+                ${badge(session.liveStatus || (session.active ? 'active' : 'stored'))}
+                <span class="badge purple">${escapeHtml(session.updatedLabel || '-')}</span>
+                ${typeof session.totalTokens === 'number' ? `<span class="badge warn">${numFmt.format(session.totalTokens)} 토큰</span>` : ''}
+              </div>
+            </div>
+            <div class="session-actions">
+              <button class="ghost-icon" data-open-session="${escapeHtml(session.key)}" title="최근 메시지">👁️</button>
+              <button class="ghost-icon" data-delete-session="${escapeHtml(session.key)}" title="세션 삭제">🗑️</button>
+            </div>
+          </div>
+        `;
+      }
+
+      function bindCommonActionButtons(root = document) {
+        root.querySelectorAll('[data-open-agent]').forEach((button) => {
+          button.addEventListener('click', () => openAgentModal(button.dataset.openAgent));
+        });
+        root.querySelectorAll('[data-delete-session]').forEach((button) => {
+          button.addEventListener('click', () => openDeleteModal(button.dataset.deleteSession));
+        });
+        root.querySelectorAll('[data-open-session]').forEach((button) => {
+          button.addEventListener('click', () => openSessionPeek(button.dataset.openSession));
+        });
+      }
+
+      function renderOverview() {
+        const overview = state.dashboard.overview;
+        const agents = state.dashboard.agents || [];
+        const errors = overview.errorCrons || [];
+
+        return `
+          <div class="stats-grid">
+            ${statCard('활성 세션', numFmt.format(overview.counts.activeSessions || 0), '현재 Gateway가 보고한 세션')}
+            ${statCard('실행 중', numFmt.format(overview.counts.runningSessions || 0), 'status=running 기준')}
+            ${statCard('크론 잡', numFmt.format(overview.counts.cronJobs || 0), `오류 ${numFmt.format(overview.counts.cronErrors || 0)}개`)}
+            ${statCard('활성 토큰', numFmt.format(overview.counts.activeTokens || 0), '활성 세션 totalTokens 합산')}
+          </div>
+
+          <div class="section-title"><h3>에이전트 현황</h3><span class="muted">에이전트별 현재 상태와 대표 설정 보기</span></div>
+          <div class="agent-strip">
+            ${agents.map((agent) => `
+              <div class="panel agent-card">
+                <div class="agent-head">
+                  <div class="agent-id">
+                    <div class="agent-emoji">${escapeHtml(agent.emoji)}</div>
+                    <div>
+                      <div class="agent-name">${escapeHtml(agent.name)}</div>
+                      <div class="agent-meta">${escapeHtml(agent.id)} · 마지막 ${escapeHtml(agent.lastTouchedLabel || '-')}</div>
+                    </div>
+                  </div>
+                  ${badge(agent.status)}
+                </div>
+                <div class="agent-metrics">
+                  <div class="metric-box"><div class="k">활성 세션</div><div class="v">${numFmt.format(agent.counts.activeSessions || 0)}</div></div>
+                  <div class="metric-box"><div class="k">실행 중</div><div class="v">${numFmt.format(agent.counts.runningSessions || 0)}</div></div>
+                  <div class="metric-box"><div class="k">크론</div><div class="v">${numFmt.format(agent.counts.cronJobs || 0)}</div></div>
+                  <div class="metric-box"><div class="k">토큰</div><div class="v">${numFmt.format(agent.counts.totalTokens || 0)}</div></div>
+                </div>
+                <div class="inline-row">
+                  <span class="badge purple">${escapeHtml(agent.model || '-')}</span>
+                  <span class="badge warn">${escapeHtml(agent.workspace || '-')}</span>
+                </div>
+                <div style="display:flex; gap:10px; justify-content:flex-end">
+                  <button class="btn btn-secondary" data-open-agent="${escapeHtml(agent.id)}">대표설정 보기</button>
+                  <button class="btn btn-primary" data-agent-page="${escapeHtml(agent.id)}">상세 대시보드</button>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+
+          <div class="section-title"><h3>오류 크론</h3><span class="muted">문제 있는 크론 잡만 따로 표시</span></div>
+          <div class="warning-list">
+            ${errors.length ? errors.map((job) => `
+              <div class="warning-panel panel">
+                <div class="warning-header">
+                  <div>
+                    <strong>${escapeHtml(job.name)}</strong>
+                    <div class="muted" style="margin-top:6px">${escapeHtml(job.agentId)} · ${escapeHtml(job.schedule.expr)} (${escapeHtml(job.schedule.tz)})</div>
+                  </div>
+                  ${badge(job.status)}
+                </div>
+                <div class="warning-summary">${escapeHtml(job.latestSummary || job.description || '오류 요약 없음')}</div>
+              </div>
+            `).join('') : '<div class="panel warning-panel"><div class="empty">현재 오류 크론이 없습니다 ✅</div></div>'}
+          </div>
+
+          <div class="section-title" style="margin-top:22px"><h3>채널별 세션</h3><span class="muted">삭제 아이콘으로 바로 세션 정리 가능</span></div>
+          <div class="channel-list">
+            ${(overview.channels || []).map((channel) => `
+              <div class="channel-card panel">
+                <div class="channel-head">
+                  <div>
+                    <strong style="font-size:20px">${escapeHtml(channel.label)}</strong>
+                    <div class="channel-meta">${numFmt.format(channel.count)}개 세션 · 마지막 ${escapeHtml(channel.updatedLabel || '-')}</div>
+                  </div>
+                  <span class="count-pill">${numFmt.format(channel.count)}</span>
+                </div>
+                <div>
+                  ${(channel.sessions || []).map((session) => sessionCard(session)).join('')}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+
+      function renderSessions() {
+        const agents = state.dashboard.agents || [];
+        const sessions = (state.dashboard.sessions || []).filter((session) => {
+          const q = state.filters.sessionQuery.trim().toLowerCase();
+          const hay = [session.displayName, session.preview, session.agentName, session.channelLabel, session.key].join(' ').toLowerCase();
+          if (q && !hay.includes(q)) return false;
+          if (state.filters.sessionAgent !== 'all' && session.agentId !== state.filters.sessionAgent) return false;
+          if (state.filters.sessionStatus === 'active' && !session.active) return false;
+          if (state.filters.sessionStatus === 'running' && session.liveStatus !== 'running') return false;
+          if (state.filters.sessionStatus === 'stored' && session.active) return false;
+          if (state.filters.sessionChannel !== 'all' && session.channelKey !== state.filters.sessionChannel) return false;
+          return true;
+        });
+
+        const channelOptions = Array.from(new Set((state.dashboard.sessions || []).map((session) => session.channelKey))).sort();
+
+        return `
+          <div class="filter-bar panel">
+            <div class="field">
+              <label>검색</label>
+              <input id="sessionQuery" value="${escapeHtml(state.filters.sessionQuery)}" placeholder="세션명, 미리보기, 에이전트, 채널" />
+            </div>
+            <div class="field">
+              <label>에이전트</label>
+              <select id="sessionAgent">
+                <option value="all">전체</option>
+                ${agents.map((agent) => `<option value="${escapeHtml(agent.id)}" ${state.filters.sessionAgent === agent.id ? 'selected' : ''}>${escapeHtml(agent.name)}</option>`).join('')}
+              </select>
+            </div>
+            <div class="field">
+              <label>상태</label>
+              <select id="sessionStatus">
+                <option value="all" ${state.filters.sessionStatus === 'all' ? 'selected' : ''}>전체</option>
+                <option value="active" ${state.filters.sessionStatus === 'active' ? 'selected' : ''}>활성</option>
+                <option value="running" ${state.filters.sessionStatus === 'running' ? 'selected' : ''}>실행 중</option>
+                <option value="stored" ${state.filters.sessionStatus === 'stored' ? 'selected' : ''}>저장 세션만</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>채널</label>
+              <select id="sessionChannel">
+                <option value="all">전체</option>
+                ${channelOptions.map((channel) => `<option value="${escapeHtml(channel)}" ${state.filters.sessionChannel === channel ? 'selected' : ''}>${escapeHtml(channel)}</option>`).join('')}
+              </select>
+            </div>
+            <div class="field">
+              <label>&nbsp;</label>
+              <button class="btn btn-primary" id="applySessionFilters">필터 적용</button>
+            </div>
+          </div>
+
+          <div class="table-panel panel">
+            <table>
+              <thead>
+                <tr>
+                  <th>세션</th>
+                  <th>에이전트</th>
+                  <th>상태</th>
+                  <th>업데이트</th>
+                  <th>채널</th>
+                  <th>모델 / 토큰</th>
+                  <th>파일</th>
+                  <th style="text-align:right">동작</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${sessions.length ? sessions.map((session) => `
+                  <tr>
+                    <td>
+                      <div style="font-weight:800">${escapeHtml(session.displayName)}</div>
+                      <div class="muted" style="margin-top:6px">${escapeHtml(session.preview)}</div>
+                      <div class="mono muted" style="margin-top:6px; font-size:12px">${escapeHtml(session.key)}</div>
+                    </td>
+                    <td>${escapeHtml(session.agentEmoji)} ${escapeHtml(session.agentName)}</td>
+                    <td>${badge(session.liveStatus || (session.active ? 'active' : 'stored'))}</td>
+                    <td>${escapeHtml(session.updatedAtLabel || '-')}<div class="muted" style="margin-top:6px; font-size:12px">${escapeHtml(session.updatedAtIso || '-')}</div></td>
+                    <td>${escapeHtml(session.channelLabel || '-')}<div class="muted" style="margin-top:6px">${escapeHtml(session.kind || '-')}</div></td>
+                    <td>${escapeHtml(session.model || '-')}<div class="muted" style="margin-top:6px">${typeof session.totalTokens === 'number' ? `${numFmt.format(session.totalTokens)} 토큰` : '-'}</div></td>
+                    <td class="mono" style="font-size:12px">${escapeHtml(session.sessionFile || '-')}</td>
+                    <td>
+                      <div style="display:flex; justify-content:flex-end; gap:8px">
+                        <button class="ghost-icon" data-open-session="${escapeHtml(session.key)}">👁️</button>
+                        <button class="ghost-icon" data-delete-session="${escapeHtml(session.key)}">🗑️</button>
+                      </div>
+                    </td>
+                  </tr>
+                `).join('') : '<tr><td colspan="8"><div class="empty">조건에 맞는 세션이 없습니다.</div></td></tr>'}
+              </tbody>
+            </table>
+          </div>
+        `;
+      }
+
+      function renderCron() {
+        const agents = state.dashboard.agents || [];
+        const jobs = (state.dashboard.cronJobs || []).filter((job) => {
+          const q = state.filters.cronQuery.trim().toLowerCase();
+          const hay = [job.name, job.description, job.agentId, job.schedule.expr, job.latestSummary].join(' ').toLowerCase();
+          if (q && !hay.includes(q)) return false;
+          if (state.filters.cronAgent !== 'all' && job.agentId !== state.filters.cronAgent) return false;
+          if (state.filters.cronStatus !== 'all' && job.status !== state.filters.cronStatus) return false;
+          return true;
+        });
+
+        return `
+          <div class="filter-bar panel">
+            <div class="field">
+              <label>검색</label>
+              <input id="cronQuery" value="${escapeHtml(state.filters.cronQuery)}" placeholder="크론명, 설명, 스케줄" />
+            </div>
+            <div class="field">
+              <label>에이전트</label>
+              <select id="cronAgent">
+                <option value="all">전체</option>
+                ${agents.map((agent) => `<option value="${escapeHtml(agent.id)}" ${state.filters.cronAgent === agent.id ? 'selected' : ''}>${escapeHtml(agent.name)}</option>`).join('')}
+              </select>
+            </div>
+            <div class="field">
+              <label>상태</label>
+              <select id="cronStatus">
+                <option value="all" ${state.filters.cronStatus === 'all' ? 'selected' : ''}>전체</option>
+                <option value="ok" ${state.filters.cronStatus === 'ok' ? 'selected' : ''}>정상</option>
+                <option value="running" ${state.filters.cronStatus === 'running' ? 'selected' : ''}>실행 중</option>
+                <option value="error" ${state.filters.cronStatus === 'error' ? 'selected' : ''}>오류</option>
+                <option value="disabled" ${state.filters.cronStatus === 'disabled' ? 'selected' : ''}>비활성</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>&nbsp;</label>
+              <button class="btn btn-primary" id="applyCronFilters">필터 적용</button>
+            </div>
+          </div>
+
+          <div class="table-panel panel">
+            <table>
+              <thead>
+                <tr>
+                  <th>이름</th>
+                  <th>에이전트</th>
+                  <th>스케줄</th>
+                  <th>상태</th>
+                  <th>마지막 실행</th>
+                  <th>다음 실행</th>
+                  <th>요약</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${jobs.length ? jobs.map((job) => `
+                  <tr>
+                    <td><div style="font-weight:800">${escapeHtml(job.name)}</div><div class="muted" style="margin-top:6px">${escapeHtml(job.description || '-')}</div></td>
+                    <td>${escapeHtml(findAgent(job.agentId)?.emoji || '🤖')} ${escapeHtml(findAgent(job.agentId)?.name || job.agentId)}</td>
+                    <td class="mono">${escapeHtml(job.schedule.expr)}<div class="muted" style="margin-top:6px">${escapeHtml(job.schedule.tz)}</div></td>
+                    <td>${badge(job.status)}</td>
+                    <td>${escapeHtml(job.lastRunLabel || '-')}<div class="muted" style="margin-top:6px">${job.durationMs ? `${Math.round(job.durationMs / 1000)}초` : '-'}</div></td>
+                    <td>${escapeHtml(job.nextRunLabel || '-')}</td>
+                    <td>${escapeHtml(job.latestSummary || '-')}</td>
+                  </tr>
+                `).join('') : '<tr><td colspan="7"><div class="empty">조건에 맞는 크론이 없습니다.</div></td></tr>'}
+              </tbody>
+            </table>
+          </div>
+        `;
+      }
+
+      function renderActivity() {
+        const items = (state.dashboard.activities || []).filter((item) => {
+          const q = state.filters.activityQuery.trim().toLowerCase();
+          const hay = [item.title, item.body, item.agentId, item.channel].join(' ').toLowerCase();
+          if (q && !hay.includes(q)) return false;
+          if (state.filters.activityKind !== 'all' && item.kind !== state.filters.activityKind) return false;
+          return true;
+        });
+
+        return `
+          <div class="filter-bar panel">
+            <div class="field">
+              <label>검색</label>
+              <input id="activityQuery" value="${escapeHtml(state.filters.activityQuery)}" placeholder="제목, 본문, 에이전트, 채널" />
+            </div>
+            <div class="field">
+              <label>유형</label>
+              <select id="activityKind">
+                <option value="all" ${state.filters.activityKind === 'all' ? 'selected' : ''}>전체</option>
+                <option value="session" ${state.filters.activityKind === 'session' ? 'selected' : ''}>세션</option>
+                <option value="cron" ${state.filters.activityKind === 'cron' ? 'selected' : ''}>크론</option>
+                <option value="error" ${state.filters.activityKind === 'error' ? 'selected' : ''}>오류</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>&nbsp;</label>
+              <button class="btn btn-primary" id="applyActivityFilters">필터 적용</button>
+            </div>
+          </div>
+          <div class="activity-list">
+            ${items.length ? items.map((item) => `
+              <div class="activity-item panel">
+                <div class="activity-icon">${item.kind === 'cron' ? '⏰' : item.kind === 'error' ? '⚠️' : '💬'}</div>
+                <div>
+                  <div class="activity-title">${escapeHtml(item.title)}</div>
+                  <div class="muted" style="margin-top:6px">${escapeHtml(findAgent(item.agentId)?.name || item.agentId)} · ${escapeHtml(item.channel || '-')} · ${escapeHtml(item.relative || '-')}</div>
+                  <div class="activity-body">${escapeHtml(item.body || '-')}</div>
+                </div>
+                <div>${badge(item.status)}</div>
+              </div>
+            `).join('') : '<div class="panel"><div class="empty">활동 로그가 없습니다.</div></div>'}
+          </div>
+        `;
+      }
+
+      function renderAgentDetail(agent) {
+        if (!agent) return '<div class="panel"><div class="empty">에이전트를 찾지 못했습니다.</div></div>';
+        const currentTab = state.fileTabMap[agent.id] || 'SOUL.md';
+        const currentFile = agent.promptFiles.find((file) => file.name === currentTab) || agent.promptFiles[0];
+
+        return `
+          <div class="agent-strip" style="grid-template-columns:1fr; margin-bottom:0">
+            <div class="panel agent-card">
+              <div class="agent-head">
+                <div class="agent-id">
+                  <div class="agent-emoji">${escapeHtml(agent.emoji)}</div>
+                  <div>
+                    <div class="agent-name">${escapeHtml(agent.name)}</div>
+                    <div class="agent-meta">${escapeHtml(agent.id)} · 마지막 ${escapeHtml(agent.lastTouchedLabel || '-')}</div>
+                  </div>
+                </div>
+                ${badge(agent.status)}
+              </div>
+              <div class="agent-metrics">
+                <div class="metric-box"><div class="k">활성 세션</div><div class="v">${numFmt.format(agent.counts.activeSessions || 0)}</div></div>
+                <div class="metric-box"><div class="k">실행 중</div><div class="v">${numFmt.format(agent.counts.runningSessions || 0)}</div></div>
+                <div class="metric-box"><div class="k">크론</div><div class="v">${numFmt.format(agent.counts.cronJobs || 0)}</div></div>
+                <div class="metric-box"><div class="k">오류 크론</div><div class="v">${numFmt.format(agent.counts.errorCrons || 0)}</div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-grid">
+            <div class="file-box panel">
+              <div class="section-title"><h3>대표 설정 파일</h3><button class="btn btn-secondary" data-open-agent="${escapeHtml(agent.id)}">모달로 보기</button></div>
+              <div class="file-tabs">
+                ${agent.promptFiles.map((file) => `
+                  <button class="file-tab ${currentTab === file.name ? 'active' : ''}" data-agent-file="${escapeHtml(agent.id)}" data-file-tab="${escapeHtml(file.name)}">${escapeHtml(file.name)}</button>
+                `).join('')}
+              </div>
+              <div class="muted" style="margin-bottom:10px">${escapeHtml(currentFile?.path || '-')}</div>
+              <div class="file-content">${escapeHtml(currentFile?.content || '(파일 없음)')}</div>
+            </div>
+
+            <div class="settings-box panel">
+              <div class="section-title"><h3>대표 설정 요약</h3><span class="muted">읽기 전용</span></div>
+              <div class="settings-list">
+                <div class="settings-row"><div class="settings-key">모델</div><div>${escapeHtml(agent.model || '-')}</div></div>
+                <div class="settings-row"><div class="settings-key">워크스페이스</div><div class="mono">${escapeHtml(agent.workspace || '-')}</div></div>
+                <div class="settings-row"><div class="settings-key">툴 프로필</div><div>${escapeHtml(agent.toolsProfile || '-')}</div></div>
+                <div class="settings-row"><div class="settings-key">타임아웃</div><div>${agent.timeoutSeconds ? `${numFmt.format(agent.timeoutSeconds)}초` : '-'}</div></div>
+                <div class="settings-row"><div class="settings-key">바인딩</div><div>${agent.bindings?.length ? escapeHtml(JSON.stringify(agent.bindings)) : '없음'}</div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section-title" style="margin-top:22px"><h3>할당 업무 진행상황</h3><span class="muted">실행 중 / 반복 작업 / 최근 완료 기준</span></div>
+          <div class="work-columns">
+            <div class="work-column panel">
+              <h4>작업 중</h4>
+              ${agent.recentWork.running.length ? agent.recentWork.running.map((item) => `
+                <div class="work-card">
+                  <div class="work-title">${escapeHtml(item.title)}</div>
+                  <div class="work-sub">${escapeHtml(item.subtitle)}</div>
+                  <div class="inline-row" style="margin-top:8px">${badge('running')}<span class="badge purple">${escapeHtml(item.updatedLabel || '-')}</span></div>
+                </div>
+              `).join('') : '<div class="empty">현재 실행 중인 작업이 없습니다.</div>'}
+            </div>
+            <div class="work-column panel">
+              <h4>반복 / 예정</h4>
+              ${agent.recentWork.scheduled.length ? agent.recentWork.scheduled.map((item) => `
+                <div class="work-card">
+                  <div class="work-title">${escapeHtml(item.title)}</div>
+                  <div class="work-sub">${escapeHtml(item.subtitle)}</div>
+                  <div class="inline-row" style="margin-top:8px">${badge(item.status)}<span class="badge warn">다음 ${escapeHtml(item.nextRunLabel || '-')}</span></div>
+                </div>
+              `).join('') : '<div class="empty">등록된 반복 작업이 없습니다.</div>'}
+            </div>
+            <div class="work-column panel">
+              <h4>최근 완료</h4>
+              ${agent.recentWork.completed.length ? agent.recentWork.completed.map((item) => `
+                <div class="work-card">
+                  <div class="work-title">${escapeHtml(item.title)}</div>
+                  <div class="work-sub">${escapeHtml(item.subtitle)}</div>
+                  <div class="inline-row" style="margin-top:8px">${badge(item.status)}<span class="badge purple">${escapeHtml(item.updatedLabel || '-')}</span></div>
+                </div>
+              `).join('') : '<div class="empty">최근 완료 기록이 없습니다.</div>'}
+            </div>
+          </div>
+        `;
+      }
+
+      function renderAgentPage() {
+        const agents = state.dashboard.agents || [];
+        const selected = findAgent(state.view.agentId || agents[0]?.id);
+        return `
+          <div class="agent-strip">
+            ${agents.map((agent) => `
+              <div class="panel agent-card">
+                <div class="agent-head">
+                  <div class="agent-id">
+                    <div class="agent-emoji">${escapeHtml(agent.emoji)}</div>
+                    <div>
+                      <div class="agent-name">${escapeHtml(agent.name)}</div>
+                      <div class="agent-meta">${escapeHtml(agent.id)}</div>
+                    </div>
+                  </div>
+                  ${badge(agent.status)}
+                </div>
+                <div class="inline-row">
+                  <span class="badge purple">${escapeHtml(agent.model || '-')}</span>
+                  <span class="badge warn">활성 ${numFmt.format(agent.counts.activeSessions || 0)}</span>
+                  <span class="badge ok">크론 ${numFmt.format(agent.counts.cronJobs || 0)}</span>
+                </div>
+                <div style="display:flex; gap:10px; justify-content:flex-end">
+                  <button class="btn btn-secondary" data-open-agent="${escapeHtml(agent.id)}">대표설정 보기</button>
+                  <button class="btn btn-primary" data-agent-focus="${escapeHtml(agent.id)}">이 에이전트 보기</button>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+          <div style="margin-top:18px">${renderAgentDetail(selected)}</div>
+        `;
+      }
+
+      function renderPageMeta() {
+        if (state.view.type === 'overview') {
+          return { title: '개요', desc: '전체 운영 상태, 채널별 세션, 오류 크론, 에이전트 상태를 한눈에 봅니다.' };
+        }
+        if (state.view.type === 'sessions') {
+          return { title: '세션', desc: '활성/저장 세션을 보고, 목록 안에서 바로 삭제·아카이브 처리합니다.' };
+        }
+        if (state.view.type === 'cron') {
+          return { title: '크론 잡', desc: '스케줄, 마지막 실행, 다음 실행, 오류 여부를 한 표에서 봅니다.' };
+        }
+        if (state.view.type === 'activity') {
+          return { title: '활동 로그', desc: '세션 미리보기와 크론 실행 기록을 시간순으로 확인합니다.' };
+        }
+        const agent = findAgent(state.view.agentId);
+        return { title: `${agent?.emoji || '🤖'} ${agent?.name || '에이전트'}`, desc: '에이전트별 진행상황과 대표 설정 파일을 봅니다.' };
+      }
+
+      function renderContent() {
+        if (!state.dashboard) {
+          els.content.innerHTML = '<div class="panel"><div class="empty">데이터를 불러오는 중입니다…</div></div>';
+          return;
+        }
+
+        const meta = renderPageMeta();
+        els.pageTitle.textContent = meta.title;
+        els.pageDesc.textContent = meta.desc;
+        els.updatedAt.textContent = `업데이트: ${new Date(state.dashboard.generatedAt).toLocaleString('ko-KR')}`;
+
+        if (state.view.type === 'overview') els.content.innerHTML = renderOverview();
+        else if (state.view.type === 'sessions') els.content.innerHTML = renderSessions();
+        else if (state.view.type === 'cron') els.content.innerHTML = renderCron();
+        else if (state.view.type === 'activity') els.content.innerHTML = renderActivity();
+        else els.content.innerHTML = renderAgentPage();
+
+        renderSidebar();
+        bindCommonActionButtons(els.content);
+        bindPageSpecificEvents();
+      }
+
+      function bindPageSpecificEvents() {
+        document.querySelectorAll('[data-agent-page], [data-agent-focus]').forEach((button) => {
+          button.addEventListener('click', () => {
+            const agentId = button.dataset.agentPage || button.dataset.agentFocus;
+            state.view = { type: 'agent', agentId };
+            renderApp();
+          });
+        });
+
+        document.querySelectorAll('[data-agent-file]').forEach((button) => {
+          button.addEventListener('click', () => {
+            state.fileTabMap[button.dataset.agentFile] = button.dataset.fileTab;
+            renderApp();
+          });
+        });
+
+        const sessionApply = document.getElementById('applySessionFilters');
+        if (sessionApply) {
+          sessionApply.addEventListener('click', () => {
+            state.filters.sessionQuery = document.getElementById('sessionQuery').value;
+            state.filters.sessionAgent = document.getElementById('sessionAgent').value;
+            state.filters.sessionStatus = document.getElementById('sessionStatus').value;
+            state.filters.sessionChannel = document.getElementById('sessionChannel').value;
+            renderContent();
+          });
+        }
+
+        const cronApply = document.getElementById('applyCronFilters');
+        if (cronApply) {
+          cronApply.addEventListener('click', () => {
+            state.filters.cronQuery = document.getElementById('cronQuery').value;
+            state.filters.cronAgent = document.getElementById('cronAgent').value;
+            state.filters.cronStatus = document.getElementById('cronStatus').value;
+            renderContent();
+          });
+        }
+
+        const activityApply = document.getElementById('applyActivityFilters');
+        if (activityApply) {
+          activityApply.addEventListener('click', () => {
+            state.filters.activityQuery = document.getElementById('activityQuery').value;
+            state.filters.activityKind = document.getElementById('activityKind').value;
+            renderContent();
+          });
+        }
+      }
+
+      function renderApp() {
+        renderContent();
+      }
+
+      async function loadDashboard(force = false) {
+        els.refreshBtn.disabled = true;
+        els.forceRefreshBtn.disabled = true;
+        try {
+          state.dashboard = await fetchJson(`/api/dashboard${force ? '?force=1' : ''}`);
+          if (state.view.type === 'agent' && !findAgent(state.view.agentId)) {
+            state.view = { type: 'overview', agentId: null };
+          }
+          renderApp();
+        } catch (error) {
+          showToast(error.message || String(error), 'error');
+        } finally {
+          els.refreshBtn.disabled = false;
+          els.forceRefreshBtn.disabled = false;
+        }
+      }
+
+      function openDeleteModal(sessionKey) {
+        const session = (state.dashboard.sessions || []).find((item) => item.key === sessionKey);
         if (!session) return;
         state.deleteTarget = session;
-        els.modalMessage.innerHTML = `
-          <strong>${escapeHtml(session.displayName || session.key)}</strong> 세션을 정리합니다.<br />
-          transcript는 archive 폴더로 이동하고, 메모리 인덱스도 다시 갱신합니다.
+        els.deleteModalBody.innerHTML = `
+          <strong>${escapeHtml(session.displayName)}</strong> 세션을 정리합니다.<br>
+          transcript는 archive 폴더로 이동하고, 세션 메모리 인덱스도 다시 갱신합니다.<br>
+          에이전트: <strong>${escapeHtml(session.agentName || session.agentId)}</strong>
         `;
-        els.modalKey.textContent = session.key;
-        els.modalBackdrop.classList.add('show');
+        els.deleteModalKey.textContent = session.key;
+        els.deleteModalBackdrop.classList.add('show');
       }
 
       function closeDeleteModal() {
         state.deleteTarget = null;
-        els.modalBackdrop.classList.remove('show');
+        els.deleteModalBackdrop.classList.remove('show');
       }
 
-      async function loadOverview() {
-        state.overview = await fetchJson('/api/overview');
-        renderStats();
-      }
-
-      async function loadSessions() {
-        const params = new URLSearchParams({
-          scope: state.scope,
-          agent: state.agent,
-          status: state.status,
-          query: state.query,
-        });
-        const data = await fetchJson(`/api/sessions?${params.toString()}`);
-        state.sessions = data.sessions || [];
-        state.agents = data.agents || [];
-        renderAgentOptions();
-        renderTable();
-      }
-
-      async function refreshAll() {
-        document.getElementById('refreshButton').disabled = true;
-        try {
-          await Promise.all([loadOverview(), loadSessions()]);
-        } catch (error) {
-          showToast(error.message || String(error), 'error');
-        } finally {
-          document.getElementById('refreshButton').disabled = false;
-        }
-      }
-
-      async function deleteSelectedSession() {
-        const session = state.deleteTarget;
-        if (!session) return;
-        const button = document.getElementById('confirmDeleteButton');
-        button.disabled = true;
-        button.textContent = '정리 중...';
+      async function confirmDeleteSession() {
+        if (!state.deleteTarget) return;
+        els.deleteConfirmBtn.disabled = true;
+        els.deleteConfirmBtn.textContent = '정리 중...';
         try {
           const result = await fetchJson('/api/sessions/delete', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ key: session.key }),
+            body: JSON.stringify({ key: state.deleteTarget.key }),
           });
-          const archivedCount = Array.isArray(result.archived) ? result.archived.length : 0;
-          showToast(`세션 정리 완료 · 아카이브 ${archivedCount}개 · 메모리 갱신 ${result.memory?.queued ? '큐 등록' : '실패'}`);
+          const archivedCount = (result.archived || []).length;
+          showToast(`세션 정리 완료 · 아카이브 ${archivedCount}개 · 메모리 ${result.memory?.queued ? '갱신 큐 등록' : '변경 없음'}`);
           closeDeleteModal();
-          await refreshAll();
+          await loadDashboard(true);
         } catch (error) {
           showToast(error.message || String(error), 'error');
         } finally {
-          button.disabled = false;
-          button.textContent = '삭제 + 아카이브';
+          els.deleteConfirmBtn.disabled = false;
+          els.deleteConfirmBtn.textContent = '삭제 + 아카이브';
         }
       }
 
-      function bindEvents() {
-        document.getElementById('refreshButton').addEventListener('click', refreshAll);
-        document.getElementById('filterButton').addEventListener('click', () => {
-          state.scope = els.scopeSelect.value;
-          state.agent = els.agentSelect.value;
-          state.status = els.statusSelect.value;
-          state.query = els.searchInput.value.trim();
-          refreshAll();
+      function openSessionPeek(sessionKey) {
+        const session = (state.dashboard.sessions || []).find((item) => item.key === sessionKey);
+        if (!session) return;
+        const agent = findAgent(session.agentId);
+        els.agentModalHeader.innerHTML = `
+          <div>
+            <div style="font-size:26px; font-weight:800">${escapeHtml(agent?.emoji || '🤖')} ${escapeHtml(session.displayName)}</div>
+            <div class="page-desc">${escapeHtml(session.agentName || session.agentId)} · ${escapeHtml(session.channelLabel || '-')} · ${escapeHtml(session.updatedAtLabel || '-')}</div>
+          </div>
+        `;
+        els.agentModalBody.innerHTML = `
+          <div class="settings-box panel" style="box-shadow:none">
+            <div class="settings-list">
+              <div class="settings-row"><div class="settings-key">세션 키</div><div class="mono">${escapeHtml(session.key)}</div></div>
+              <div class="settings-row"><div class="settings-key">모델</div><div>${escapeHtml(session.model || '-')}</div></div>
+              <div class="settings-row"><div class="settings-key">파일</div><div class="mono">${escapeHtml(session.sessionFile || '-')}</div></div>
+            </div>
+          </div>
+          <div class="section-title" style="margin-top:18px"><h3>최근 메시지</h3><button class="btn btn-danger" data-delete-session="${escapeHtml(session.key)}">세션 삭제</button></div>
+          <div class="activity-list">
+            ${(session.recentMessages || []).length ? session.recentMessages.map((msg) => `
+              <div class="activity-item panel" style="box-shadow:none">
+                <div class="activity-icon">${msg.role === 'assistant' ? '🤖' : msg.role === 'user' ? '🧑' : msg.role === 'error' ? '⚠️' : '🧰'}</div>
+                <div>
+                  <div class="activity-title">${escapeHtml(msg.role)} · ${escapeHtml(msg.iso || '-')}</div>
+                  <div class="activity-body">${escapeHtml(msg.text || '-')}</div>
+                </div>
+                <div>${badge(msg.role === 'error' ? 'error' : 'active')}</div>
+              </div>
+            `).join('') : '<div class="panel"><div class="empty">저장된 최근 메시지가 없습니다.</div></div>'}
+          </div>
+        `;
+        els.agentModalBackdrop.classList.add('show');
+        bindCommonActionButtons(els.agentModalBody);
+      }
+
+      function openAgentModal(agentId) {
+        const agent = findAgent(agentId);
+        if (!agent) return;
+        state.agentModalTarget = agentId;
+        const currentTab = state.fileTabMap[agent.id] || 'SOUL.md';
+        const currentFile = agent.promptFiles.find((file) => file.name === currentTab) || agent.promptFiles[0];
+
+        els.agentModalHeader.innerHTML = `
+          <div>
+            <div style="font-size:28px; font-weight:800">${escapeHtml(agent.emoji)} ${escapeHtml(agent.name)}</div>
+            <div class="page-desc">${escapeHtml(agent.id)} · ${escapeHtml(agent.model || '-')} · ${escapeHtml(agent.workspace || '-')}</div>
+          </div>
+        `;
+
+        els.agentModalBody.innerHTML = `
+          <div class="settings-grid">
+            <div class="file-box panel" style="box-shadow:none">
+              <div class="section-title"><h3>대표 설정 파일</h3><span class="muted">읽기 전용</span></div>
+              <div class="file-tabs">
+                ${agent.promptFiles.map((file) => `<button class="file-tab ${currentTab === file.name ? 'active' : ''}" data-agent-modal-file="${escapeHtml(agent.id)}" data-file-tab="${escapeHtml(file.name)}">${escapeHtml(file.name)}</button>`).join('')}
+              </div>
+              <div class="muted" style="margin-bottom:10px">${escapeHtml(currentFile?.path || '-')}</div>
+              <div class="file-content">${escapeHtml(currentFile?.content || '(파일 없음)')}</div>
+            </div>
+            <div class="settings-box panel" style="box-shadow:none">
+              <div class="section-title"><h3>대표 설정 요약</h3><span class="muted">에이전트별 기본값</span></div>
+              <div class="settings-list">
+                <div class="settings-row"><div class="settings-key">상태</div><div>${badge(agent.status)}</div></div>
+                <div class="settings-row"><div class="settings-key">모델</div><div>${escapeHtml(agent.model || '-')}</div></div>
+                <div class="settings-row"><div class="settings-key">워크스페이스</div><div class="mono">${escapeHtml(agent.workspace || '-')}</div></div>
+                <div class="settings-row"><div class="settings-key">툴 프로필</div><div>${escapeHtml(agent.toolsProfile || '-')}</div></div>
+                <div class="settings-row"><div class="settings-key">활성 세션</div><div>${numFmt.format(agent.counts.activeSessions || 0)}</div></div>
+                <div class="settings-row"><div class="settings-key">실행 중</div><div>${numFmt.format(agent.counts.runningSessions || 0)}</div></div>
+                <div class="settings-row"><div class="settings-key">크론</div><div>${numFmt.format(agent.counts.cronJobs || 0)}</div></div>
+                <div class="settings-row"><div class="settings-key">바인딩</div><div>${agent.bindings?.length ? escapeHtml(JSON.stringify(agent.bindings)) : '없음'}</div></div>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top:18px">${renderAgentDetail(agent)}</div>
+        `;
+        els.agentModalBackdrop.classList.add('show');
+
+        els.agentModalBody.querySelectorAll('[data-agent-modal-file]').forEach((button) => {
+          button.addEventListener('click', () => {
+            state.fileTabMap[button.dataset.agentModalFile] = button.dataset.fileTab;
+            openAgentModal(button.dataset.agentModalFile);
+          });
         });
-        document.getElementById('resetButton').addEventListener('click', () => {
-          state.scope = 'all';
-          state.agent = 'all';
-          state.status = 'all';
-          state.query = '';
-          els.scopeSelect.value = 'all';
-          els.agentSelect.value = 'all';
-          els.statusSelect.value = 'all';
-          els.searchInput.value = '';
-          refreshAll();
-        });
-        document.getElementById('activeOnlyButton').addEventListener('click', () => {
-          state.scope = 'active';
-          els.scopeSelect.value = 'active';
-          refreshAll();
-        });
-        document.getElementById('allButton').addEventListener('click', () => {
-          state.scope = 'all';
-          els.scopeSelect.value = 'all';
-          refreshAll();
-        });
-        document.getElementById('cancelDeleteButton').addEventListener('click', closeDeleteModal);
-        document.getElementById('confirmDeleteButton').addEventListener('click', deleteSelectedSession);
-        els.modalBackdrop.addEventListener('click', (event) => {
-          if (event.target === els.modalBackdrop) closeDeleteModal();
-        });
-        els.searchInput.addEventListener('keydown', (event) => {
-          if (event.key === 'Enter') document.getElementById('filterButton').click();
+        bindCommonActionButtons(els.agentModalBody);
+        els.agentModalBody.querySelectorAll('[data-agent-page], [data-agent-focus]').forEach((button) => {
+          button.addEventListener('click', () => {
+            const agentId2 = button.dataset.agentPage || button.dataset.agentFocus;
+            closeAgentModal();
+            state.view = { type: 'agent', agentId: agentId2 };
+            renderApp();
+          });
         });
       }
 
-      bindEvents();
-      refreshAll();
-      setInterval(refreshAll, 20000);
+      function closeAgentModal() {
+        state.agentModalTarget = null;
+        els.agentModalBackdrop.classList.remove('show');
+      }
+
+      function bindGlobalEvents() {
+        els.refreshBtn.addEventListener('click', () => loadDashboard(false));
+        els.forceRefreshBtn.addEventListener('click', () => loadDashboard(true));
+
+        els.deleteCancelBtn.addEventListener('click', closeDeleteModal);
+        els.deleteModalClose.addEventListener('click', closeDeleteModal);
+        els.deleteConfirmBtn.addEventListener('click', confirmDeleteSession);
+        els.deleteModalBackdrop.addEventListener('click', (event) => {
+          if (event.target === els.deleteModalBackdrop) closeDeleteModal();
+        });
+
+        els.agentModalClose.addEventListener('click', closeAgentModal);
+        els.agentModalBackdrop.addEventListener('click', (event) => {
+          if (event.target === els.agentModalBackdrop) closeAgentModal();
+        });
+      }
+
+      bindGlobalEvents();
+      loadDashboard(true);
+      setInterval(() => loadDashboard(false), 30000);
     </script>
   </body>
 </html>
