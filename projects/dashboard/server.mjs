@@ -16,6 +16,9 @@ const CONFIG = {
   openclawBin: process.env.OPENCLAW_BIN || '/opt/homebrew/bin/openclaw',
   stateDir: process.env.OPENCLAW_STATE_DIR || '/Users/dh/.openclaw',
   workspaceDir: process.env.OPENCLAW_WORKSPACE_DIR || '/Users/dh/.openclaw/workspace',
+  cronRunKeepPerJob: Number(process.env.CRON_RUN_KEEP_PER_JOB || 5),
+  cronRunAutoPruneEnabled: process.env.CRON_RUN_AUTO_PRUNE_ENABLED !== '0',
+  cronRunAutoPruneIntervalMs: Number(process.env.CRON_RUN_AUTO_PRUNE_INTERVAL_MS || 15 * 60 * 1000),
 };
 
 CONFIG.agentsDir = path.join(CONFIG.stateDir, 'agents');
@@ -58,6 +61,11 @@ const cache = {
   dashboard: null,
   promise: null,
   ts: 0,
+};
+
+const maintenance = {
+  lastCronRunPruneAt: null,
+  lastCronRunPruneSummary: null,
 };
 
 function log(...args) {
@@ -197,6 +205,15 @@ function inferRoomLabel(session) {
   if (match?.[1]) return match[1];
   if (session?.kind === 'cron') return '크론 세션';
   return displayName || session?.key || channelLabel(detectChannel(session));
+}
+
+function isCronRunKey(key = '') {
+  return String(key).includes(':cron:') && String(key).includes(':run:');
+}
+
+function cronJobIdFromKey(key = '') {
+  const match = String(key).match(/:cron:([^:]+):run:/);
+  return match?.[1] || null;
 }
 
 async function parseBody(req) {
@@ -532,6 +549,7 @@ async function loadStoredSessions() {
       channelKey: detectChannel(session),
       channelLabel: channelLabel(detectChannel(session)),
       roomLabel: inferRoomLabel(session),
+      isStoredCronRun: !session.live && isCronRunKey(session.key),
     });
   }
 
@@ -780,6 +798,65 @@ async function manualDeleteFromStore(agentId, key) {
   }
 
   return { deleted: true, entry, archived };
+}
+
+async function pruneStoredCronRunSessions({ keepPerJob = CONFIG.cronRunKeepPerJob } = {}) {
+  const stores = await listAgentStores();
+  const live = await fetchLiveSessions();
+  const activeKeys = new Set((live.sessions || []).map((session) => session.key));
+  const summary = {
+    keepPerJob,
+    scannedAgents: stores.length,
+    deletedEntries: 0,
+    archivedFiles: 0,
+    affectedAgents: {},
+  };
+
+  for (const store of stores) {
+    const raw = await readJson(store.storePath, {});
+    const entries = Object.entries(raw || {});
+    const candidatesByJob = new Map();
+
+    for (const [key, value] of entries) {
+      if (activeKeys.has(key)) continue;
+      if (!isCronRunKey(key)) continue;
+      const jobId = cronJobIdFromKey(key) || 'unknown';
+      if (!candidatesByJob.has(jobId)) candidatesByJob.set(jobId, []);
+      candidatesByJob.get(jobId).push({ key, value, updatedAt: value?.updatedAt || 0 });
+    }
+
+    const victims = [];
+    for (const items of candidatesByJob.values()) {
+      items.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+      victims.push(...items.slice(keepPerJob));
+    }
+
+    if (!victims.length) continue;
+
+    const archived = [];
+    for (const victim of victims) {
+      const entry = raw[victim.key];
+      delete raw[victim.key];
+      if (entry?.sessionFile && await exists(entry.sessionFile)) {
+        archived.push(await moveToArchive(store.agentId, entry.sessionFile));
+      }
+    }
+
+    await writeJsonAtomic(store.storePath, raw);
+    summary.deletedEntries += victims.length;
+    summary.archivedFiles += archived.filter(Boolean).length;
+    summary.affectedAgents[store.agentId] = {
+      deletedEntries: victims.length,
+      archivedFiles: archived.filter(Boolean).length,
+    };
+    queueMemoryReindex(store.agentId);
+  }
+
+  maintenance.lastCronRunPruneAt = new Date().toISOString();
+  maintenance.lastCronRunPruneSummary = summary;
+  cache.dashboard = null;
+  cache.ts = 0;
+  return summary;
 }
 
 async function deleteSessionWorkflow(key) {
@@ -1071,10 +1148,12 @@ async function buildDashboardData() {
       recentMessages: session.recentMessages || [],
       origin: session.origin,
       roomLabel: session.roomLabel,
+      isStoredCronRun: session.isStoredCronRun,
     })),
     cronJobs,
     activities,
     agents,
+    maintenance,
   };
 }
 
@@ -1191,6 +1270,16 @@ async function reconcileTailscaleBindings() {
 async function main() {
   await bindPrimary();
   await reconcileTailscaleBindings();
+  if (CONFIG.cronRunAutoPruneEnabled) {
+    pruneStoredCronRunSessions().catch((error) => {
+      log('Cron run auto prune error:', String(error.message || error));
+    });
+    setInterval(() => {
+      pruneStoredCronRunSessions().catch((error) => {
+        log('Cron run auto prune error:', String(error.message || error));
+      });
+    }, CONFIG.cronRunAutoPruneIntervalMs).unref();
+  }
   setInterval(() => {
     reconcileTailscaleBindings().catch((error) => {
       log('Tailscale reconcile error:', String(error.message || error));

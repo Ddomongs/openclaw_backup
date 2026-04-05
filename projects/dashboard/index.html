@@ -539,6 +539,17 @@
         outline: none;
       }
 
+      .checkbox-line {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 44px;
+        color: var(--text);
+        font-size: 13px;
+      }
+
+      .checkbox-line input { width: 16px; height: 16px; }
+
       .table-panel { overflow: hidden; }
       table { width: 100%; border-collapse: collapse; }
       thead th {
@@ -821,6 +832,7 @@
           sessionAgent: 'all',
           sessionStatus: 'all',
           sessionChannel: 'all',
+          showStoredCronRuns: false,
           cronQuery: '',
           cronStatus: 'all',
           cronAgent: 'all',
@@ -1140,9 +1152,11 @@
 
       function renderSessions() {
         const agents = state.dashboard.agents || [];
+        const hiddenStoredCronRuns = (state.dashboard.sessions || []).filter((session) => session.isStoredCronRun).length;
         const sessions = (state.dashboard.sessions || []).filter((session) => {
           const q = state.filters.sessionQuery.trim().toLowerCase();
           const hay = [session.displayName, session.preview, session.agentName, session.channelLabel, session.key].join(' ').toLowerCase();
+          if (!state.filters.showStoredCronRuns && session.isStoredCronRun) return false;
           if (q && !hay.includes(q)) return false;
           if (state.filters.sessionAgent !== 'all' && session.agentId !== state.filters.sessionAgent) return false;
           if (state.filters.sessionStatus === 'active' && !session.active) return false;
@@ -1193,7 +1207,13 @@
               <label>&nbsp;</label>
               <button class="btn btn-primary" id="applySessionFilters">필터 적용</button>
             </div>
+            <div class="field">
+              <label>자동정리 대상</label>
+              <label class="checkbox-line"><input type="checkbox" id="showStoredCronRuns" ${state.filters.showStoredCronRuns ? 'checked' : ''} /> run 세션 보기</label>
+            </div>
           </div>
+
+          <div class="muted" style="margin:-4px 2px 14px; font-size:13px; line-height:1.6">현재 자동정리 정책은 <strong>job별 최신 5개 유지</strong>이고, stored cron run 세션 ${numFmt.format(hiddenStoredCronRuns)}개는 기본 숨김입니다.</div>
 
           <div class="agent-group-list">
             ${groupedByAgent.length ? groupedByAgent.map(({ agent, items }) => {
@@ -1496,7 +1516,7 @@
           return { title: '개요', desc: '전체 운영 상태, 채널별 세션, 오류 크론, 에이전트 상태를 한눈에 봅니다.' };
         }
         if (state.view.type === 'sessions') {
-          return { title: '세션', desc: '활성/저장 세션을 보고, 목록 안에서 바로 삭제·아카이브 처리합니다.' };
+          return { title: '세션', desc: '활성/저장 세션을 보고, 기본적으로 stored cron run 세션은 숨긴 상태에서 목록을 관리합니다.' };
         }
         if (state.view.type === 'cron') {
           return { title: '크론 잡', desc: '스케줄, 마지막 실행, 다음 실행, 오류 여부를 한 표에서 봅니다.' };
@@ -1553,6 +1573,7 @@
             state.filters.sessionAgent = document.getElementById('sessionAgent').value;
             state.filters.sessionStatus = document.getElementById('sessionStatus').value;
             state.filters.sessionChannel = document.getElementById('sessionChannel').value;
+            state.filters.showStoredCronRuns = document.getElementById('showStoredCronRuns')?.checked || false;
             renderContent();
           });
         }

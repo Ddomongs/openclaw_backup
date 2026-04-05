@@ -28,6 +28,12 @@
       <string>/Users/dh/.openclaw</string>
       <key>OPENCLAW_WORKSPACE_DIR</key>
       <string>/Users/dh/.openclaw/workspace</string>
+      <key>CRON_RUN_KEEP_PER_JOB</key>
+      <string>5</string>
+      <key>CRON_RUN_AUTO_PRUNE_ENABLED</key>
+      <string>1</string>
+      <key>CRON_RUN_AUTO_PRUNE_INTERVAL_MS</key>
+      <string>900000</string>
     </dict>
 
     <key>RunAtLoad</key>
