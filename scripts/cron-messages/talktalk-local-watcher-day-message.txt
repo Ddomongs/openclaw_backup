@@ -24,6 +24,20 @@
 2. 이어서 `./smartstore-cs-worker/scripts/check-automation-chrome.sh` 로 `RUNNING` 확인합니다.
 3. 실행 실패면 현재 세션에 짧게 실패 사유를 보고하고 종료합니다.
 
+[2-1] 로그인 해제 자동 복구
+1. 스마트스토어는 `https://sell.smartstore.naver.com/` 접속 시 `https://sell.smartstore.naver.com/#/home/about` 로 이동되면 로그인 필요 상태로 봅니다.
+2. 이 경우 화면의 `로그인하기` 버튼을 클릭합니다.
+3. 이후 `https://accounts.commerce.naver.com/login?...` 화면에서 `김*호 님 / 네이버 아이디로 간편 로그인 / sos8*** 님` 이 보이는 간편 로그인 버튼을 클릭해 자동 로그인을 1회 시도합니다.
+4. 퀵스타는 `https://quickstar.co.kr/mypage/mypage.php` 접속 시 로그인 필요 상태면 `<a class="new_login_bt">로그인</a>` 버튼을 클릭해 1회 자동 로그인 시도합니다.
+5. 자동 로그인 시도 후에도 스마트스토어 또는 퀵스타 로그인이 복구되지 않으면 현재 세션에 아래 형식으로 짧게 알리고 종료합니다.
+```text
+[로그인 해제 알림]
+- 스마트스토어 또는 퀵스타 로그인 해제 상태
+- 자동 로그인 1회 시도 후에도 미복구
+- 조치 필요: 자동화 Chrome에서 로그인 확인
+```
+6. 같은 로그인 해제 상태를 매 실행마다 반복 길게 설명하지 말고, 실제 장애 알림만 짧게 유지합니다.
+
 [3] 톡톡 목록 스냅샷 수집
 1. 전용 자동화 Chrome(9223)에 연결합니다.
 2. `talkUrl` 탭을 열거나 기존 탭을 재사용합니다.
