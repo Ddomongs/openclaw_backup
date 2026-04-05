@@ -1,11 +1,15 @@
 import { chromium } from 'playwright';
 import { buildTalktalkDraft } from '../src/talktalk-drafts.js';
 import { buildTalktalkAssistItem, writeTalktalkAssistReport } from '../src/talktalk-assist.js';
-import { buildDeliveryDraft, ensureQuickstarSession, getOrCreateQuickstarPage, resolveQuickstarShipment } from '../src/quickstar-direct.js';
+import { buildRichDeliveryDraft, ensureQuickstarSession, fetchQuickstarByInvoice, getOrCreateQuickstarPage, getOrCreateQuickstarWorkerPage } from '../src/quickstar-direct.js';
 
 const CDP_URL = process.env.CSBOT_CDP_URL || 'http://127.0.0.1:9223';
 const REPORT_PATH = process.env.CSBOT_TALKTALK_REPORT_PATH || '/Users/dh/.openclaw/workspace/smartstore-cs-worker/runtime-data/talktalk-assist-latest.md';
 const LIMIT = Number(process.env.CSBOT_TALKTALK_ASSIST_LIMIT || 10);
+
+async function detachCdpBrowser(browser) {
+  await browser?._connection?.close?.();
+}
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const clean = (v) => String(v || '').replace(/\s+/g, ' ').trim();
@@ -181,6 +185,96 @@ async function extractConversation(frame, meta) {
   }, meta);
 }
 
+async function clickOrderLinkAndExtractShipment(frame, context) {
+  const orderLinks = frame.locator('a.text_blue');
+  const count = await orderLinks.count();
+  if (count === 0) {
+    return { ok: false, reason: 'order_link_missing' };
+  }
+
+  for (let i = 0; i < count; i += 1) {
+    const link = orderLinks.nth(i);
+    const text = clean(await link.textContent().catch(() => ''));
+    const orderNo = (text.match(/(\d{10,})/) || [])[1] || null;
+    if (!orderNo) continue;
+
+    await link.click({ force: true }).catch(() => {});
+    await sleep(2000);
+
+    const popupPage = context.pages().find((p) => p.url().includes(`/popup/${orderNo}/productOrderDetail`));
+    if (!popupPage) continue;
+
+    await popupPage.waitForLoadState('domcontentloaded').catch(() => {});
+    await popupPage.waitForTimeout(1000).catch(() => {});
+
+    const popupData = await popupPage.evaluate(() => {
+      const normalize = (v) => String(v || '').replace(/\s+/g, ' ').trim();
+      const body = normalize(document.body?.innerText || '');
+      const invoices = [...new Set((body.match(/\b\d{12}\b/g) || []))];
+      return {
+        url: location.href,
+        bodyPreview: body.slice(0, 2000),
+        invoices,
+      };
+    });
+
+    const invoiceNo = popupData.invoices[0] || null;
+    return {
+      ok: Boolean(invoiceNo),
+      reason: invoiceNo ? null : 'invoice_missing',
+      orderNo,
+      invoiceNo,
+      popupData,
+    };
+  }
+
+  return { ok: false, reason: 'invoice_missing' };
+}
+
+async function fetchCjTracking(context, invoiceNo) {
+  const trackingNo = clean(invoiceNo);
+  if (!/^\d{12}$/.test(trackingNo)) {
+    return { ok: false, reason: 'invalid_invoice' };
+  }
+
+  const page = await context.newPage();
+  try {
+    await page.goto(`https://www.cjlogistics.com/ko/tool/parcel/tracking?gnbInvcNo=${trackingNo}`, {
+      waitUntil: 'domcontentloaded',
+    });
+    await page.waitForTimeout(3000);
+
+    const result = await page.evaluate(() => {
+      const normalize = (v) => String(v || '').replace(/\s+/g, ' ').trim();
+      const rows = Array.from(document.querySelectorAll('#statusDetail tr'))
+        .map((tr) => Array.from(tr.querySelectorAll('td')).map((td) => normalize(td.textContent)))
+        .filter((cells) => cells.length >= 4 && cells.some(Boolean));
+
+      if (rows.length === 0) {
+        return { ok: false, reason: 'cj_status_rows_missing' };
+      }
+
+      const last = rows[rows.length - 1];
+      const combinedText = rows.flat().join(' ');
+      const driverMatch = combinedText.match(/(?:배송담당|담당사원|배송예정)[:\s]*(\S+)\s+(010-\d{4}-\d{4})/);
+
+      return {
+        ok: true,
+        status: normalize(last[0] || ''),
+        lastUpdate: normalize(last[1] || ''),
+        detail: normalize(last[2] || ''),
+        branch: normalize(last[3] || ''),
+        empName: normalize(driverMatch?.[1] || ''),
+        empPhone: normalize(driverMatch?.[2] || ''),
+      };
+    });
+
+    return result;
+  } finally {
+    await page.close().catch(() => {});
+  }
+}
+
 function isShippingCategory(category) {
   return ['shipping_eta_basic', 'shipping_eta_long', 'shipping_delay_apology'].includes(category);
 }
@@ -206,40 +300,47 @@ async function main() {
       let draft = buildTalktalkDraft(conversation);
 
       if (draft.matched && isShippingCategory(draft.category)) {
-        const quickstarPage = await getOrCreateQuickstarPage(context);
-        const shipmentLookup = await resolveQuickstarShipment(quickstarPage, {
-          text: [
-            conversation.latestCustomerMessage,
-            conversation.preview,
-            conversation.receiverPhone,
-            conversation.orderNumbers?.join(' '),
-          ].filter(Boolean).join(' '),
-          customerName: conversation.receiverName || conversation.customerName,
-          buyerName: conversation.buyerName,
-        });
+        const quickstarPage = await getOrCreateQuickstarWorkerPage(browser, context);
+        const shipmentMeta = await clickOrderLinkAndExtractShipment(frame, context);
 
-        if (shipmentLookup.ok) {
-          const deliveryDraft = buildDeliveryDraft({
-            inquiry: {
-              body: conversation.latestCustomerMessage,
-              rawText: [conversation.latestCustomerMessage, conversation.preview].filter(Boolean).join('\n'),
-            },
-            shipment: shipmentLookup.result,
-          });
-
-          draft = {
-            ...draft,
-            templateCode: 'quickstar_delivery_result',
-            text: deliveryDraft.text,
-            tone: deliveryDraft.confidence === 'medium' ? 'long' : draft.tone,
-            quickstarQuery: shipmentLookup.query,
-          };
-        } else {
+        if (!shipmentMeta.ok || !shipmentMeta.invoiceNo) {
           draft = {
             ...draft,
             route: 'handoff_required',
-            reason: `quickstar_${shipmentLookup.reason}`,
+            reason: `quickstar_${shipmentMeta.reason || 'invoice_missing'}`,
           };
+        } else {
+          const shipment = await fetchQuickstarByInvoice(quickstarPage, shipmentMeta.invoiceNo);
+
+          if (!shipment.loginRequired && !shipment.noResult && shipment.status) {
+            const cj = await fetchCjTracking(context, shipmentMeta.invoiceNo).catch((error) => ({
+              ok: false,
+              reason: error?.message || 'cj_fetch_failed',
+            }));
+            const deliveryDraft = buildRichDeliveryDraft({
+              shipment,
+              cj: cj?.ok ? cj : null,
+              invoiceNo: shipmentMeta.invoiceNo,
+            });
+
+            draft = {
+              ...draft,
+              route: 'auto_draft',
+              templateCode: 'invoice_first_delivery_result',
+              text: deliveryDraft.text,
+              tone: 'long',
+              invoiceNo: shipmentMeta.invoiceNo,
+              orderNo: shipmentMeta.orderNo,
+              quickstarQuery: { find: 'gr_tc_invoice', value: shipmentMeta.invoiceNo },
+              cjStatus: cj?.ok ? cj.status : null,
+            };
+          } else {
+            draft = {
+              ...draft,
+              route: 'handoff_required',
+              reason: shipment.loginRequired ? 'quickstar_login_required' : 'quickstar_no_result',
+            };
+          }
         }
       }
 
@@ -254,11 +355,13 @@ async function main() {
     await writeTalktalkAssistReport(REPORT_PATH, items);
     console.log('[REPORT]', REPORT_PATH);
   } finally {
-    await browser.close().catch(() => {});
+    await detachCdpBrowser(browser).catch(() => {});
   }
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+main()
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });

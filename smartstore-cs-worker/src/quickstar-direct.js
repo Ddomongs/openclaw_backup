@@ -1,6 +1,43 @@
 import { CONFIG } from './config.js';
 import { cleanText } from './utils.js';
 
+const DAYS = ['일', '월', '화', '수', '목', '금', '토'];
+
+function formatDateLabel(date) {
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${mm}월 ${dd}일 (${DAYS[date.getDay()]})`;
+}
+
+function parseCjDate(value) {
+  const match = String(value || '').match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (!match) return null;
+  return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+}
+
+function addDayNames(text) {
+  return String(text || '').replace(/(\d{1,2})\/(\d{1,2})(?:~(\d{1,2})\/(\d{1,2})|~(\d{1,2}))/, (...args) => {
+    const startMonth = Number(args[1]);
+    const startDay = Number(args[2]);
+    const hasSecondMonth = Boolean(args[3]);
+    const endMonth = hasSecondMonth ? Number(args[3]) : startMonth;
+    const endDay = hasSecondMonth ? Number(args[4]) : Number(args[5]);
+    const year = new Date().getFullYear();
+    const startDate = new Date(year, startMonth - 1, startDay);
+    const endDate = new Date(year, endMonth - 1, endDay);
+    const range = hasSecondMonth
+      ? `${startMonth}/${startDay}~${endMonth}/${endDay}`
+      : `${startMonth}/${startDay}~${endDay}`;
+    return `${range} (${DAYS[startDate.getDay()]}, ${DAYS[endDate.getDay()]})`;
+  });
+}
+
+function normalizeArrivalLabel(text) {
+  const value = cleanText(text);
+  if (!value) return '';
+  return /반입 예정$/.test(value) ? value : `${value} 반입 예정`;
+}
+
 export function detectQuickstarCategory(value) {
   const normalized = cleanText(value);
   if (!normalized) return null;
@@ -82,12 +119,94 @@ export function buildQuickstarSearchUrl(find, value) {
   return url.toString();
 }
 
+const QUICKSTAR_LOGIN_PAGE_NAME = '__CSBOT_QUICKSTAR_LOGIN__';
+const QUICKSTAR_WORKER_PAGE_NAME = '__CSBOT_QUICKSTAR_WORKER__';
+const QUICKSTAR_WORKER_BOOT_URL = 'data:text/html,<title>csbot-quickstar-worker</title>';
+
+async function getPageName(page) {
+  return page.evaluate(() => window.name || '').catch(() => '');
+}
+
+async function setPageName(page, name) {
+  await page.evaluate((nextName) => {
+    window.name = nextName;
+  }, name).catch(() => {});
+}
+
+async function findQuickstarNamedPage(context, pageName) {
+  for (const page of context.pages()) {
+    if (!page.url().includes('quickstar.co.kr')) continue;
+    if ((await getPageName(page)) === pageName) return page;
+  }
+  return null;
+}
+
+async function createBackgroundWorkerPage(browser, context) {
+  try {
+    const cdp = await browser.newBrowserCDPSession();
+    await cdp.send('Target.createTarget', {
+      url: QUICKSTAR_WORKER_BOOT_URL,
+      background: true,
+    });
+    await cdp.detach().catch(() => {});
+
+    const started = Date.now();
+    while (Date.now() - started < 5000) {
+      const page = context.pages().find((item) => item.url() === QUICKSTAR_WORKER_BOOT_URL);
+      if (page) return page;
+      await new Promise((resolve) => setTimeout(resolve, 150));
+    }
+  } catch {
+    // fallback below
+  }
+
+  return context.newPage();
+}
+
 export async function getOrCreateQuickstarPage(context) {
-  const existing = context.pages().find(page => page.url().includes('quickstar.co.kr'));
-  if (existing) return existing;
+  const named = await findQuickstarNamedPage(context, QUICKSTAR_LOGIN_PAGE_NAME);
+  if (named) return named;
+
+  let existing = null;
+  for (const page of context.pages()) {
+    const url = page.url();
+    if (!url.includes('quickstar.co.kr')) continue;
+    const pageName = await getPageName(page);
+    if (pageName === QUICKSTAR_WORKER_PAGE_NAME) continue;
+    if (!url.includes('/mypage/service_list.php')) {
+      existing = page;
+      break;
+    }
+    if (!existing) existing = page;
+  }
+
+  if (existing) {
+    await setPageName(existing, QUICKSTAR_LOGIN_PAGE_NAME);
+    return existing;
+  }
 
   const page = await context.newPage();
   await page.goto(CONFIG.quickstarBaseUrl, { waitUntil: 'domcontentloaded' });
+  await setPageName(page, QUICKSTAR_LOGIN_PAGE_NAME);
+  return page;
+}
+
+export async function getOrCreateQuickstarWorkerPage(browser, context) {
+  const named = await findQuickstarNamedPage(context, QUICKSTAR_WORKER_PAGE_NAME);
+  if (named) return named;
+
+  const existing = context.pages().find((page) => {
+    const url = page.url();
+    return url.includes('quickstar.co.kr/mypage/service_list.php');
+  });
+
+  if (existing) {
+    await setPageName(existing, QUICKSTAR_WORKER_PAGE_NAME);
+    return existing;
+  }
+
+  const page = await createBackgroundWorkerPage(browser, context);
+  await setPageName(page, QUICKSTAR_WORKER_PAGE_NAME);
   return page;
 }
 
@@ -222,5 +341,58 @@ export function buildDeliveryDraft({ inquiry, shipment }) {
   return {
     text: lines.join('\n'),
     confidence: 'medium',
+  };
+}
+
+export function buildRichDeliveryDraft({ shipment, cj = null, invoiceNo = '' }) {
+  const trackingNo = cleanText(invoiceNo || shipment?.invoiceNo || shipment?.query?.value || '');
+
+  if (!shipment || shipment.loginRequired || shipment.noResult || !shipment.status || !trackingNo) {
+    return {
+      text: '안녕하세요, 고객님 😊\n배송 현황 안내를 위해 추가 확인이 필요합니다.\n\n추가 문의는 톡톡문의로 남기시면 빠른 답변 드리겠습니다.',
+      confidence: 'low',
+    };
+  }
+
+  const lines = [
+    '안녕하세요, 고객님 😊',
+    '배송 현황 안내드립니다.',
+    '',
+    '━━━━━━━━━━━━━━━━',
+    `📦 해외지사: ${shipment.status}`,
+  ];
+
+  if (cj?.status) {
+    let cjLine = `🚛 국내배송: ${cj.status}`;
+    if (cj.empName) {
+      cjLine += ` (배달기사: ${cj.empName}`;
+      if (cj.empPhone) cjLine += ` ${cj.empPhone}`;
+      cjLine += ')';
+    }
+    lines.push(cjLine);
+  }
+
+  if (shipment.arrival) {
+    lines.push(`📅 국내 반입: ${normalizeArrivalLabel(addDayNames(shipment.arrival))}`);
+  }
+
+  const cjDate = parseCjDate(cj?.lastUpdate);
+  if (cjDate && cj?.status && /배송완료|배달완료/.test(cj.status)) {
+    lines.push(`🚚 배송 완료: ${formatDateLabel(cjDate)}`);
+  } else if (cjDate && cj?.status) {
+    lines.push(`🚚 배송 진행: ${formatDateLabel(cjDate)} 기준`);
+  }
+
+  lines.push('━━━━━━━━━━━━━━━━');
+  lines.push('');
+  lines.push('🔍 배송 조회:');
+  lines.push(`http://tracking.tipoasis.com/${trackingNo}`);
+  lines.push('');
+  lines.push('빠른 배송을 위해 최선을 다하겠습니다 🙏');
+  lines.push('감사합니다.');
+
+  return {
+    text: lines.join('\n'),
+    confidence: cj?.status ? 'high' : 'medium',
   };
 }

@@ -2,9 +2,13 @@ import { chromium } from 'playwright';
 import { CONFIG } from './config.js';
 import { SS } from './smartstore-selectors.js';
 import { cleanText, extract12DigitInvoice, firstExistingSelector, firstVisibleLocator, sleep } from './utils.js';
-import { buildDeliveryDraft, ensureQuickstarSession, fetchQuickstarByInvoice, getOrCreateQuickstarPage } from './quickstar-direct.js';
+import { buildDeliveryDraft, ensureQuickstarSession, fetchQuickstarByInvoice, getOrCreateQuickstarPage, getOrCreateQuickstarWorkerPage } from './quickstar-direct.js';
 import { buildAssistItem, writeAssistReport } from './qna-assist.js';
 import { buildQnaDraft } from './qna-drafts.js';
+
+async function detachCdpBrowser(browser) {
+  await browser?._connection?.close?.();
+}
 
 async function connectContext() {
   const browser = await chromium.connectOverCDP(CONFIG.cdpUrl);
@@ -187,7 +191,8 @@ async function processInquiry(page, rowSelector, index) {
     return { skipped: true, reason: 'quickstar_session_invalid', inquiry, quickstarSession };
   }
 
-  const quickstarResult = await fetchQuickstarByInvoice(quickstarPage, inquiry.invoiceNo);
+  const quickstarWorkerPage = await getOrCreateQuickstarWorkerPage(browser, context);
+  const quickstarResult = await fetchQuickstarByInvoice(quickstarWorkerPage, inquiry.invoiceNo);
   console.log('[QUICKSTAR]', JSON.stringify(quickstarResult, null, 2));
 
   const draft = buildDeliveryDraft({ inquiry, shipment: quickstarResult });
@@ -261,13 +266,15 @@ async function main() {
       console.log('[ASSIST_REPORT]', CONFIG.assistReportPath);
     }
   } finally {
-    await browser.close().catch(() => {});
+    await detachCdpBrowser(browser).catch(() => {});
   }
 
   console.log('[DONE] run-once finished');
 }
 
-main().catch(error => {
-  console.error('[FATAL]', error);
-  process.exit(1);
-});
+main()
+  .then(() => process.exit(0))
+  .catch(error => {
+    console.error('[FATAL]', error);
+    process.exit(1);
+  });

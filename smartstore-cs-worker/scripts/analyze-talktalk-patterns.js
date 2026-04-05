@@ -8,6 +8,10 @@ const OUT_MD = path.join(OUT_DIR, 'talktalk_patterns_2026-04-04.md');
 const CDP_URL = process.env.CSBOT_CDP_URL || 'http://127.0.0.1:9223';
 const MAX_CONVERSATIONS = Number(process.env.CSBOT_TALKTALK_ANALYZE_LIMIT || 30);
 
+async function detachCdpBrowser(browser) {
+  await browser?._connection?.close?.();
+}
+
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const clean = (v) => String(v || '').replace(/\s+/g, ' ').trim();
 
@@ -207,10 +211,12 @@ async function main() {
   await fs.writeFile(OUT_MD, markdown, 'utf8');
 
   console.log(JSON.stringify({ outJson: OUT_JSON, outMd: OUT_MD, summary }, null, 2));
-  await browser.close();
+  await detachCdpBrowser(browser);
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+main()
+  .then(() => process.exit(0))
+  .catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });

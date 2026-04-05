@@ -3,6 +3,10 @@ import { ensureQuickstarSession, getOrCreateQuickstarPage } from '../src/quickst
 
 const CDP_URL = process.env.CSBOT_CDP_URL || 'http://127.0.0.1:9223';
 
+async function detachCdpBrowser(browser) {
+  await browser?._connection?.close?.();
+}
+
 async function main() {
   const browser = await chromium.connectOverCDP(CDP_URL);
   const context = browser.contexts()[0];
@@ -17,11 +21,13 @@ async function main() {
       process.exit(2);
     }
   } finally {
-    await browser.close().catch(() => {});
+    await detachCdpBrowser(browser).catch(() => {});
   }
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+main()
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
