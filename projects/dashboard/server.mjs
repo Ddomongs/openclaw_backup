@@ -145,7 +145,11 @@ function toIso(timestamp) {
 function sanitizeText(value, maxLength = 220) {
   const compact = String(value || '')
     .replace(/```[\s\S]*?```/g, '[코드블럭 생략]')
-    .replace(/\s+/g, ' ')
+    .replace(/\r\n?/g, '\n')
+    .split('\n')
+    .map((line) => line.replace(/[\t ]+/g, ' ').trim())
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
     .trim();
   if (!compact) return '';
   return compact.length > maxLength ? `${compact.slice(0, maxLength - 1)}…` : compact;

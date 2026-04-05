@@ -35,6 +35,7 @@
         font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Segoe UI", sans-serif;
         color: var(--text);
         background: linear-gradient(180deg, #f7f8fc 0%, #eef3fb 100%);
+        line-height: 1.55;
       }
 
       button, input, select, textarea { font: inherit; }
@@ -43,14 +44,14 @@
 
       .app {
         display: grid;
-        grid-template-columns: 280px minmax(0, 1fr);
+        grid-template-columns: 236px minmax(0, 1fr);
         min-height: 100vh;
       }
 
       .sidebar {
         background: rgba(255,255,255,0.92);
         border-right: 1px solid var(--line);
-        padding: 28px 18px 20px;
+        padding: 22px 14px 18px;
         position: sticky;
         top: 0;
         height: 100vh;
@@ -60,37 +61,37 @@
       .brand {
         display: flex;
         align-items: center;
-        gap: 14px;
-        padding: 12px;
-        margin-bottom: 22px;
+        gap: 12px;
+        padding: 10px;
+        margin-bottom: 18px;
       }
 
       .brand-icon {
-        width: 56px;
-        height: 56px;
-        border-radius: 18px;
+        width: 46px;
+        height: 46px;
+        border-radius: 14px;
         display: grid;
         place-items: center;
-        font-size: 28px;
+        font-size: 24px;
         background: linear-gradient(135deg, #fff5d6, #ffe9ef);
         box-shadow: inset 0 0 0 1px rgba(255,255,255,0.8);
       }
 
       .brand h1 {
         margin: 0;
-        font-size: 28px;
-        line-height: 1.1;
+        font-size: 22px;
+        line-height: 1.2;
       }
 
       .brand .sub {
         margin-top: 4px;
-        font-size: 13px;
+        font-size: 12px;
         color: var(--muted);
       }
 
       .nav-group-title {
-        padding: 10px 14px;
-        font-size: 12px;
+        padding: 8px 12px;
+        font-size: 11px;
         color: var(--muted);
         text-transform: uppercase;
         letter-spacing: .06em;
@@ -107,9 +108,9 @@
         background: transparent;
         display: flex;
         align-items: center;
-        gap: 12px;
-        padding: 14px 14px;
-        border-radius: 16px;
+        gap: 10px;
+        padding: 11px 12px;
+        border-radius: 14px;
         text-align: left;
         color: var(--text);
       }
@@ -120,14 +121,14 @@
         box-shadow: inset 3px 0 0 var(--primary);
       }
 
-      .nav-emoji { width: 26px; text-align: center; font-size: 22px; }
-      .nav-label { flex: 1; font-weight: 700; }
+      .nav-emoji { width: 22px; text-align: center; font-size: 17px; }
+      .nav-label { flex: 1; font-weight: 700; font-size: 14px; }
 
       .count-pill {
-        min-width: 34px;
-        padding: 6px 10px;
+        min-width: 28px;
+        padding: 4px 8px;
         border-radius: 999px;
-        font-size: 12px;
+        font-size: 11px;
         text-align: center;
         background: #f4f6fa;
         color: var(--muted);
@@ -136,20 +137,20 @@
       .count-pill.error { background: var(--red-soft); color: var(--red); }
 
       .sidebar-footer {
-        margin-top: 26px;
-        padding: 16px 14px;
+        margin-top: 22px;
+        padding: 14px 12px;
         background: var(--panel-soft);
         border: 1px solid var(--line);
-        border-radius: 18px;
+        border-radius: 16px;
         display: grid;
-        gap: 10px;
+        gap: 8px;
       }
 
       .footer-row {
         display: flex;
         justify-content: space-between;
         gap: 10px;
-        font-size: 13px;
+        font-size: 12px;
       }
 
       .footer-label { color: var(--muted); }
@@ -163,7 +164,7 @@
       }
 
       .main {
-        padding: 28px;
+        padding: 24px;
         min-width: 0;
       }
 
@@ -182,9 +183,10 @@
       }
 
       .page-desc {
-        margin-top: 8px;
+        margin-top: 10px;
         color: var(--muted);
         font-size: 14px;
+        line-height: 1.65;
       }
 
       .top-actions {
@@ -219,7 +221,7 @@
         display: grid;
         grid-template-columns: repeat(4, 1fr);
         gap: 14px;
-        margin-bottom: 18px;
+        margin-bottom: 20px;
       }
 
       .stat-card {
@@ -235,6 +237,74 @@
         grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
         gap: 14px;
         margin-bottom: 18px;
+      }
+
+      .agent-pill-panel {
+        padding: 18px 20px;
+        margin-bottom: 18px;
+      }
+
+      .agent-pill-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .agent-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        background: linear-gradient(180deg, #fafcff 0%, #f4f7fc 100%);
+        min-width: 0;
+        max-width: 100%;
+        text-align: left;
+      }
+
+      .agent-pill:hover { transform: translateY(-1px); }
+
+      .agent-pill-emoji {
+        width: 24px;
+        text-align: center;
+        font-size: 16px;
+      }
+
+      .agent-pill-name {
+        font-size: 14px;
+        font-weight: 800;
+      }
+
+      .agent-pill-meta {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .agent-pill-stat {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 8px;
+        border-radius: 999px;
+        background: #fff;
+        border: 1px solid var(--line);
+      }
+
+      .agent-compact-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 14px;
+        margin-bottom: 18px;
+      }
+
+      .agent-compact-card {
+        padding: 18px 20px;
+        display: grid;
+        gap: 14px;
       }
 
       .agent-card {
@@ -356,6 +426,7 @@
       .warning-panel { padding: 18px 20px; }
       .warning-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
       .warning-summary { color: var(--muted); margin-top: 8px; line-height: 1.55; }
+      .warning-summary { white-space: pre-wrap; }
 
       .channel-card { overflow: hidden; }
       .channel-head {
@@ -380,7 +451,7 @@
       .session-item + .session-item { border-top: 1px solid var(--line); }
       .session-title { display: flex; align-items: center; gap: 10px; min-width: 0; }
       .session-title strong { font-size: 17px; }
-      .session-preview { margin-top: 8px; color: var(--muted); line-height: 1.55; }
+      .session-preview { margin-top: 10px; color: var(--muted); line-height: 1.7; white-space: pre-wrap; }
       .session-sub { margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap; }
       .session-actions { display: flex; gap: 8px; align-items: center; }
       .ghost-icon {
@@ -445,7 +516,7 @@
         font-size: 22px;
       }
       .activity-title { font-weight: 800; }
-      .activity-body { margin-top: 8px; color: var(--muted); line-height: 1.6; }
+      .activity-body { margin-top: 8px; color: var(--muted); line-height: 1.7; white-space: pre-wrap; }
 
       .settings-grid {
         display: grid;
@@ -524,7 +595,7 @@
       }
       .work-card:last-child { margin-bottom: 0; }
       .work-title { font-weight: 800; }
-      .work-sub { margin-top: 6px; color: var(--muted); line-height: 1.5; font-size: 13px; }
+      .work-sub { margin-top: 8px; color: var(--muted); line-height: 1.7; font-size: 13px; white-space: pre-wrap; }
 
       .inline-row {
         display: flex;
@@ -606,7 +677,7 @@
       }
 
       @media (max-width: 760px) {
-        .stats-grid, .agent-strip, .agent-metrics { grid-template-columns: 1fr; }
+        .stats-grid, .agent-strip, .agent-metrics, .agent-compact-grid { grid-template-columns: 1fr; }
         .session-item, .activity-item { grid-template-columns: 1fr; }
         .topbar { flex-direction: column; align-items: flex-start; }
         .filter-bar { grid-template-columns: 1fr; }
@@ -892,10 +963,28 @@
             ${statCard('활성 토큰', numFmt.format(overview.counts.activeTokens || 0), '활성 세션 totalTokens 합산')}
           </div>
 
-          <div class="section-title"><h3>에이전트 현황</h3><span class="muted">에이전트별 현재 상태와 대표 설정 보기</span></div>
-          <div class="agent-strip">
+          <div class="section-title"><h3>에이전트 현황</h3><span class="muted">한 줄 요약 + 상세 카드로 가독성 우선 정리</span></div>
+          <div class="panel agent-pill-panel">
+            <div class="agent-pill-row">
+              ${agents.map((agent) => `
+                <button class="agent-pill" data-agent-page="${escapeHtml(agent.id)}" style="border:0">
+                  <span class="agent-pill-emoji">${escapeHtml(agent.emoji)}</span>
+                  <span>
+                    <div class="agent-pill-name">${escapeHtml(agent.name)}</div>
+                    <div class="agent-pill-meta">
+                      <span class="agent-pill-stat">세션 ${numFmt.format(agent.counts.activeSessions || 0)}</span>
+                      <span class="agent-pill-stat">진행 ${numFmt.format(agent.counts.runningSessions || 0)}</span>
+                      <span class="agent-pill-stat">크론 ${numFmt.format(agent.counts.cronJobs || 0)}</span>
+                    </div>
+                  </span>
+                </button>
+              `).join('')}
+            </div>
+          </div>
+
+          <div class="agent-compact-grid">
             ${agents.map((agent) => `
-              <div class="panel agent-card">
+              <div class="panel agent-compact-card">
                 <div class="agent-head">
                   <div class="agent-id">
                     <div class="agent-emoji">${escapeHtml(agent.emoji)}</div>
@@ -910,11 +999,11 @@
                   <div class="metric-box"><div class="k">활성 세션</div><div class="v">${numFmt.format(agent.counts.activeSessions || 0)}</div></div>
                   <div class="metric-box"><div class="k">실행 중</div><div class="v">${numFmt.format(agent.counts.runningSessions || 0)}</div></div>
                   <div class="metric-box"><div class="k">크론</div><div class="v">${numFmt.format(agent.counts.cronJobs || 0)}</div></div>
-                  <div class="metric-box"><div class="k">토큰</div><div class="v">${numFmt.format(agent.counts.totalTokens || 0)}</div></div>
+                  <div class="metric-box"><div class="k">오류 / 토큰</div><div class="v">${numFmt.format(agent.counts.errorCrons || 0)} / ${numFmt.format(agent.counts.totalTokens || 0)}</div></div>
                 </div>
                 <div class="inline-row">
                   <span class="badge purple">${escapeHtml(agent.model || '-')}</span>
-                  <span class="badge warn">${escapeHtml(agent.workspace || '-')}</span>
+                  <span class="badge warn">마지막 ${escapeHtml(agent.lastTouchedLabel || '-')}</span>
                 </div>
                 <div style="display:flex; gap:10px; justify-content:flex-end">
                   <button class="btn btn-secondary" data-open-agent="${escapeHtml(agent.id)}">대표설정 보기</button>
@@ -1030,7 +1119,7 @@
                   <tr>
                     <td>
                       <div style="font-weight:800">${escapeHtml(session.displayName)}</div>
-                      <div class="muted" style="margin-top:6px">${escapeHtml(session.preview)}</div>
+                      <div class="muted" style="margin-top:8px; white-space:pre-wrap; line-height:1.7">${escapeHtml(session.preview)}</div>
                       <div class="mono muted" style="margin-top:6px; font-size:12px">${escapeHtml(session.key)}</div>
                     </td>
                     <td>${escapeHtml(session.agentEmoji)} ${escapeHtml(session.agentName)}</td>
@@ -1109,13 +1198,13 @@
               <tbody>
                 ${jobs.length ? jobs.map((job) => `
                   <tr>
-                    <td><div style="font-weight:800">${escapeHtml(job.name)}</div><div class="muted" style="margin-top:6px">${escapeHtml(job.description || '-')}</div></td>
+                    <td><div style="font-weight:800">${escapeHtml(job.name)}</div><div class="muted" style="margin-top:8px; white-space:pre-wrap; line-height:1.65">${escapeHtml(job.description || '-')}</div></td>
                     <td>${escapeHtml(findAgent(job.agentId)?.emoji || '🤖')} ${escapeHtml(findAgent(job.agentId)?.name || job.agentId)}</td>
                     <td class="mono">${escapeHtml(job.schedule.expr)}<div class="muted" style="margin-top:6px">${escapeHtml(job.schedule.tz)}</div></td>
                     <td>${badge(job.status)}</td>
                     <td>${escapeHtml(job.lastRunLabel || '-')}<div class="muted" style="margin-top:6px">${job.durationMs ? `${Math.round(job.durationMs / 1000)}초` : '-'}</div></td>
                     <td>${escapeHtml(job.nextRunLabel || '-')}</td>
-                    <td>${escapeHtml(job.latestSummary || '-')}</td>
+                    <td style="white-space:pre-wrap; line-height:1.65">${escapeHtml(job.latestSummary || '-')}</td>
                   </tr>
                 `).join('') : '<tr><td colspan="7"><div class="empty">조건에 맞는 크론이 없습니다.</div></td></tr>'}
               </tbody>
