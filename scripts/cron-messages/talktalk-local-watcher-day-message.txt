@@ -1,0 +1,65 @@
+톡톡 로컬 watcher (주간) 작업입니다.
+
+목표:
+- 로컬 브라우저 기준으로 톡톡 목록 변화를 가볍게 감지합니다.
+- 변화가 없으면 아무 것도 하지 않습니다.
+- 변화가 있으면 현재 세션에 짧게 보고하고, 승인/후속 처리를 위한 로컬 상태 파일을 갱신합니다.
+
+주간 스케줄:
+- Asia/Seoul 기준 09:00~23:59
+- 5분마다 실행
+
+반드시 아래 순서대로 진행하세요.
+
+[1] 로컬 설정 읽기
+1. `./runtime-data/navertalk-local-config.json` 파일을 읽습니다.
+2. 아래 값을 확보합니다.
+   - `talkUrl`
+   - `approvalChannelId`
+   - `controlChannelId`
+3. 값이 비어 있으면 현재 세션에 짧게 실패 사유를 보고하고 종료합니다.
+
+[2] 전용 자동화 Chrome 준비
+1. `./smartstore-cs-worker/scripts/start-automation-chrome.sh` 를 실행합니다.
+2. 이어서 `./smartstore-cs-worker/scripts/check-automation-chrome.sh` 로 `RUNNING` 확인합니다.
+3. 실행 실패면 현재 세션에 짧게 실패 사유를 보고하고 종료합니다.
+
+[3] 톡톡 목록 스냅샷 수집
+1. 전용 자동화 Chrome(9223)에 연결합니다.
+2. `talkUrl` 탭을 열거나 기존 탭을 재사용합니다.
+3. 톡톡 목록에서 최근 대화 기준 상위 40개 이내를 수집합니다.
+4. 각 항목마다 아래 값만 최소 수집합니다.
+   - 대화 식별값(가능하면 popupPath / href / candidateId)
+   - 고객 표시명
+   - 마지막 미리보기 텍스트
+   - 시간 라벨
+   - 안읽음 개수
+5. 결과를 `./runtime-data/talktalk-watch-state.latest.json` 형식으로 정리합니다.
+
+[4] 변화 감지
+1. 이전 상태 파일 `./runtime-data/talktalk-watch-state.json` 이 있으면 읽습니다.
+2. 아래 기준 중 하나라도 바뀌면 변화로 봅니다.
+   - 새 대화 식별값 등장
+   - 같은 대화의 마지막 미리보기 텍스트 변경
+   - 같은 대화의 시간 라벨 변경
+   - 같은 대화의 안읽음 개수 증가
+3. 변화가 없으면 `talktalk-watch-state.latest.json` 내용을 `talktalk-watch-state.json` 으로 반영하고 `NO_REPLY` 로 종료합니다.
+
+[5] 변화 보고
+1. 변화가 있으면 상위 10건까지만 요약합니다.
+2. 보고 형식은 아래처럼 짧게 유지합니다.
+```text
+[톡톡 watcher 변화 감지]
+- 감지시각: YYYY-MM-DD HH:MM
+- 변화 건수: N건
+- 예시:
+  - 고객명 / 안읽음 N / 마지막문장
+  - 고객명 / 안읽음 N / 마지막문장
+- 메모: 목록 변화만 감지했고, 후속 배송문의 처리는 별도 단계에서 진행합니다.
+```
+3. 보고 후 `talktalk-watch-state.latest.json` 내용을 `talktalk-watch-state.json` 으로 반영합니다.
+
+[6] 응답 규칙
+1. 변화가 없으면 `NO_REPLY`
+2. 변화가 있으면 위 형식대로만 짧게 보고
+3. 실제 장애만 짧게 보고
