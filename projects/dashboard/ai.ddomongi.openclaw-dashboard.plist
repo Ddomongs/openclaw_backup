@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>Label</key>
+    <string>ai.ddomongi.openclaw-dashboard</string>
+
+    <key>ProgramArguments</key>
+    <array>
+      <string>/opt/homebrew/bin/node</string>
+      <string>/Users/dh/.openclaw/workspace/projects/dashboard/server.mjs</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/dh/.openclaw/workspace/projects/dashboard</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+      <key>PATH</key>
+      <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+      <key>PORT</key>
+      <string>18888</string>
+      <key>HOST</key>
+      <string>127.0.0.1</string>
+      <key>OPENCLAW_BIN</key>
+      <string>/opt/homebrew/bin/openclaw</string>
+      <key>OPENCLAW_STATE_DIR</key>
+      <string>/Users/dh/.openclaw</string>
+      <key>OPENCLAW_WORKSPACE_DIR</key>
+      <string>/Users/dh/.openclaw/workspace</string>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/dh/Library/Logs/openclaw-dashboard.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/dh/Library/Logs/openclaw-dashboard.error.log</string>
+  </dict>
+</plist>
