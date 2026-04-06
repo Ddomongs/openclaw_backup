@@ -9,7 +9,8 @@ const execFileAsync = promisify(execFile);
 const approvalsDir = process.env.NAVERTALK_LOCAL_APPROVAL_DIR || path.join(process.cwd(), 'runtime-data', 'local-cs-approvals');
 const queueDir = process.env.NAVERTALK_LOCAL_QUEUE_DIR || path.join(process.cwd(), 'runtime-data', 'local-cs-delivery-queue');
 const openclawBin = process.env.OPENCLAW_BIN || 'openclaw';
-const deliveryCronId = process.env.NAVERTALK_DELIVERY_CRON_ID || 'c5e5ca0e-b2ee-4dcc-93bc-f9f94a1d8ad8';
+const fallbackDeliveryCronId = '66875dbe-1229-4bbb-a24a-d4a069be894d';
+const deliveryCronId = await resolveDeliveryCronId();
 const shortCode = String(process.argv[2] || '').trim();
 const action = String(process.argv[3] || '').trim().toLowerCase();
 const actor = String(process.argv[4] || '대표님').trim();
@@ -170,4 +171,27 @@ async function triggerDeliveryWorker() {
       stderr: String(error?.stderr || '').trim() || null,
     };
   }
+}
+
+async function resolveDeliveryCronId() {
+  const envId = String(process.env.NAVERTALK_DELIVERY_CRON_ID || '').trim();
+  if (envId) return envId;
+
+  const jobsPath = path.join(process.env.HOME || '', '.openclaw', 'cron', 'jobs.json');
+  try {
+    const raw = await fs.readFile(jobsPath, 'utf8');
+    const parsed = JSON.parse(raw);
+    const jobs = Array.isArray(parsed?.jobs) ? parsed.jobs : [];
+    const matches = jobs
+      .filter((job) => job?.name === '톡톡 delivery queue worker')
+      .sort((a, b) => Number(b?.updatedAtMs || 0) - Number(a?.updatedAtMs || 0));
+
+    const enabled = matches.find((job) => job?.enabled !== false);
+    if (enabled?.id) return String(enabled.id);
+
+    const newest = matches[0];
+    if (newest?.id) return String(newest.id);
+  } catch {}
+
+  return fallbackDeliveryCronId;
 }
