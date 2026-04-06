@@ -1,17 +1,25 @@
 #!/bin/bash
 set -euo pipefail
 
-CONTROL_CHANNEL_ID="${1:-1488378914064564256}"
+DEFAULT_CONTROL_CHANNEL_ID="$(python3 - <<'PY'
+import json
+from pathlib import Path
+path = Path('/Users/dh/.openclaw/workspace/runtime-data/cs-channel-config.json')
+data = json.loads(path.read_text()) if path.exists() else {}
+discord = data.get('discord') or {}
+print(discord.get('controlChannelId') or discord.get('csChannelId') or '1488798405860786176')
+PY
+)"
+CONTROL_CHANNEL_ID="${1:-$DEFAULT_CONTROL_CHANNEL_ID}"
 
 # 기존 CS 관련 cron 비활성화
 for job_id in \
   25b7d4ee-48d7-4af4-922b-e4c57d31b3d7 \
-  c5e5ca0e-b2ee-4dcc-93bc-f9f94a1d8ad8 \
   0c8cdcee-50d1-4d38-8fac-4ab2ed8c70fc \
   404a7cad-2278-4229-92b6-b02aa035ab14 \
   8f5ab886-949c-4c35-a4f5-1b18a82909cc
  do
-  openclaw cron edit "$job_id" --disable >/dev/null
+  openclaw cron disable "$job_id" >/dev/null 2>&1 || true
  done
 
 openclaw cron add \
