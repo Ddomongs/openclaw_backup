@@ -58,6 +58,8 @@
 ### 톡톡 문의 자동화 운영 원칙
 - 네이버 톡톡 문의는 챗봇 API 웹훅 기반으로 실시간 수집한다.
 - 상품 Q&A / 주문 고객문의는 커머스API + 크론 폴링 구조를 유지한다.
+- 톡톡 / 주문 고객 문의 / 상품 Q&A / 스마트스토어센터 화면 점검은 모두 CS 작업으로 간주하고, 자동화 전용 Chrome(9223)만 사용한다.
+- 위 작업들에서는 일반 Chrome(user 프로필) 9222 attach/재시작 복구를 사용하지 않는다.
 - 톡톡 수신 데이터는 GitHub가 아니라 로컬 저장소에 카드형으로 저장한다.
 - 초기 톡톡 자동화는 자동응답 없이 수집 / 저장 / 조회 중심으로 운영한다.
 - 고객별 카드에는 userId, 최근 메시지, 최근 시각, 메시지 개수, 수신 방향, 메시지 타임라인을 저장한다.
@@ -71,6 +73,7 @@
 - 장기 목표는 `웹훅 감지 → 로컬 초안 생성 → Discord 승인 → 로컬 브라우저 반영` 구조다.
 
 ### 톡톡 배송문의 실무 순서
+- 선행 단계: 반드시 `./scripts/browser-mcp/browser-ensure-ready-cs.sh`를 먼저 실행해 `ready`를 확인하고, 이후에도 자동화 Chrome(9223)만 사용한다.
 1. 스마트스토어 CS 톡톡 화면에서 상담을 연다.
 2. 문의가 배송문의인지 먼저 분류한다.
 3. 배송문의라면 퀵스타 탭 존재 여부와 로그인 상태를 먼저 확인한다.
@@ -242,21 +245,23 @@
 ### 기본 흐름
 1. 상품 Q&A 페이지 진입
 2. 브라우저/MCP 연결 상태를 먼저 확인한다.
-3. 반드시 `./scripts/browser-mcp/browser-ensure-ready.sh`를 먼저 실행해 `ready` 여부를 확인한다.
+3. 반드시 `./scripts/browser-mcp/browser-ensure-ready-cs.sh`를 먼저 실행해 `ready` 여부를 확인한다.
 4. 연결이 살아 있으면 기존 세션을 그대로 사용한다.
 4-1. 스마트스토어 관련 탭이 이미 열려 있으면 그 탭을 우선 사용하고, 없을 때만 새 탭을 연다.
 5. 연결이 끊겼거나 실제 제어가 안 될 때만 attach/복구를 시도한다.
-6. Google Chrome이 실행되어 있지 않으면 `./scripts/browser-mcp/browser-ensure-ready.sh`가 먼저 Chrome을 실행한 뒤 준비 상태를 다시 확인한다.
-7. Chrome은 실행 중이지만 MCP attach 또는 권한 허용이 안 된 경우에는 `./scripts/browser-mcp/browser-ensure-ready.sh`로 attach 재시도 + 허용 팝업 자동 처리 + 재확인을 먼저 시도한다.
+6. 자동화 전용 Chrome이 실행되어 있지 않으면 `./scripts/browser-mcp/browser-ensure-ready-cs.sh`가 먼저 자동화 Chrome(9223)을 실행한 뒤 준비 상태를 다시 확인한다.
+7. CS/스마트스토어 문의 작업에서는 일반 Chrome(user 프로필) attach를 시도하지 말고 `./scripts/browser-mcp/browser-ensure-ready-cs.sh`로 자동화 전용 Chrome 준비만 확인한다.
+7-1. 스마트스토어/CS 작업 중 9222 일반 Chrome이 열리면 잘못된 경로로 판단하고, 일반 Chrome을 더 건드리지 말고 9223 전용 흐름으로 즉시 복귀한다.
+7-2. 일반 Chrome attach/허용 복구는 CS 문의 흐름이 아니라 일반 browser 작업에서만 `browser-ensure-ready.sh`를 사용한다.
 8. 그래도 실패하면 대표에게 `Chrome MCP attach 실패`와 실패 원인을 짧게 보고하고 종료한다.
 9. attach 복구가 성공한 경우에만 이후 상품 Q&A 점검 단계로 넘어간다.
 10. attach 복구가 실패하면 실패 원인을 보고하고 종료한다.
    - 점검 전 상태 확인 스크립트: `./scripts/browser-mcp/chrome-mcp-preflight.sh`
-   - 브라우저 준비 보장 스크립트: `./scripts/browser-mcp/browser-ensure-ready.sh`
+   - 브라우저 준비 보장 스크립트(CS 전용): `./scripts/browser-mcp/browser-ensure-ready-cs.sh`
    - 팝업 감지/승인 모니터 스크립트: `./scripts/browser-mcp/chrome-dev-approve-monitor.sh`
    - 승인 후 attach 재시도 스크립트: `./scripts/browser-mcp/chrome-mcp-attach-approved.sh`
    - 승인 후 Q&A 점검 재개 스크립트: `./scripts/browser-mcp/qna-resume-after-approval.sh`
-10-1. 상품 Q&A 외의 다른 browser 도구 작업도 동일하게 `./scripts/browser-mcp/browser-ensure-ready.sh`를 공통 선행 단계로 사용한다.
+10-1. 상품 Q&A/톡톡/스마트스토어 문의 작업은 `./scripts/browser-mcp/browser-ensure-ready-cs.sh`를 공통 선행 단계로 사용한다.
 10-2. 스마트스토어 접근 시 로그인되지 않은 상태로 보이면 로그인 복구를 먼저 시도한다.
    - 구형 화면에서 `<span>로그인하기</span>` 버튼이 보이면 그 버튼을 클릭해 로그인 페이지로 이동한다.
    - 변경된 로그인 화면에서 `<span>로그인</span>` 버튼이 보이고 아이디/비밀번호가 이미 채워져 있으면 해당 버튼을 클릭해 로그인 완료를 시도한다.
