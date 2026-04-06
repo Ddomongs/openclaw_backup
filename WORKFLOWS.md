@@ -139,8 +139,15 @@
 10. `hold` 또는 `revise` 이면 전달 큐에는 올리지 않고 거기서 멈춘다.
 
 ### 로컬 자동 루프(웹훅 이후)
-1. `scripts/navertalk-auto-loop.mjs` 가 실행되면 먼저 `scripts/navertalk-local-approval-scan.mjs` 를 호출한다.
-2. 새 웹훅 카드 중 처리 대상이면 로컬 approval 파일을 생성한다.
+배송문의는 단일 파이프라인 기준으로 `smartstore-cs-worker/scripts/run-talktalk-assist.js` 가 담당한다.
+
+ - 톡톡 대화 수집 → 배송문의 분류 → 주문/송장 추출 → 퀵스타/7customs/CJ 조회 → 배송 초안 생성 → approval JSON 생성까지 한 번에 처리한다.
+ - 배송문의 approval 은 `run-talktalk-assist.js` 결과를 기준으로 생성한다.
+ - `scripts/navertalk-local-approval-scan.mjs` 는 배송문의를 건너뛰고, 일반/기타 문의만 approval 생성 대상으로 삼는다.
+ - `scripts/navertalk-auto-loop.mjs` 는 먼저 `run-talktalk-assist.js` 를 실행한 뒤 일반 approval scan 과 outbox sync 를 진행한다.
+
+1. `scripts/navertalk-auto-loop.mjs` 가 실행되면 먼저 `smartstore-cs-worker/scripts/run-talktalk-assist.js` 를 호출해 배송문의 approval 후보를 만든다.
+2. 그 다음 `scripts/navertalk-local-approval-scan.mjs` 를 호출해 일반/기타 문의 approval 후보를 만든다.
 3. 새 `pending` approval 은 `runtime-data/local-cs-discord-outbox/` 에 Discord 승인 대기 outbox 로 적재한다.
    - outbox 에는 실제 발송용 `sendRequest`(message 도구 전송 포맷)를 함께 저장한다.
    - 같은 `shortCode` 의 오래된 pending approval 은 `superseded` 처리하고 최신 approval 만 outbox 대상으로 삼는다.
@@ -160,10 +167,11 @@
 ### delivery queue 실제 처리 순서
 1. `navertalk-delivery-queue-next.mjs` 로 가장 오래된 `queued` 건을 `processing` 으로 가져온다.
 2. 브라우저에서 해당 고객 상담을 열고 approval 의 `draft` 를 실제 톡톡 입력창에 반영한다.
-3. 전송 직후 방금 보낸 메시지 말풍선 영역을 부분 캡처한다.
-4. `navertalk-delivery-queue-complete.mjs <approvalId> <screenshotPath>` 로 상태를 `done` 으로 갱신한다.
-5. `navertalk-delivery-report-payload.mjs <approvalId> <screenshotPath> [sentAt]` 로 Discord 완료 보고 payload 를 만든다.
-6. 완료 보고를 전송하고 다음 queue 건으로 이동한다.
+3. 전송 후 `button.btn.btn_positive.N\=a\:chu\.close` (`상담완료`) 버튼을 눌러 상담완료 처리한다.
+4. 전송 직후 방금 보낸 메시지 말풍선 영역을 부분 캡처한다.
+5. `navertalk-delivery-queue-complete.mjs <approvalId> <screenshotPath>` 로 상태를 `done` 으로 갱신한다.
+6. `navertalk-delivery-report-payload.mjs <approvalId> <screenshotPath> [sentAt]` 로 Discord 완료 보고 payload 를 만든다.
+7. 완료 보고를 전송하고 다음 queue 건으로 이동한다.
 
 ### 동시 접수 / 승인 큐 원칙
 - 문의가 2~3건 이상 동시에 들어와도 대표는 완료 보고를 기다리지 않고 다음 승인 카드를 계속 처리한다.
@@ -307,11 +315,9 @@
 - 글자 수가 `0/1000`에서 변경되었는지 확인 후 등록한다.
 
 ### 자동 실행 정책
-- 상품 Q&A 미답변 조회는 **1시간에 1번** 점검 대상이다.
-- 점검 시간은 **한국시간 09:00~22:00** 범위 안에서만 적용한다.
-- 점검 시 자동 등록하지 않고, **항상 대표 승인 요청부터** 진행한다.
-- 승인 후 후속처리에서는 등록 완료 뒤 재검색 + 화면 캡처 + Discord 첨부 완료 보고까지 수행한다.
-- 실제 1시간 주기 실행은 별도 스케줄러/하트비트 설정이 필요하며, 시스템 변경 전에 대표 확인 후 적용한다.
+- 현재 상품 Q&A 자동 점검/승인 요청 루프는 정기 하트비트·크론 작업으로 운영하지 않는다.
+- 상품 Q&A 대응이 필요하면 대표 지시가 있을 때만 수동으로 진행한다.
+- 추후 자동 루프를 다시 도입할 때만 별도 스케줄러/하트비트 설정을 대표 확인 후 반영한다.
 
 ---
 
