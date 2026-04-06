@@ -19,12 +19,13 @@
 3. `approvalId`, `customerName`, `productName`, `draft`, `queuePath` 를 확보합니다.
 
 [3] 브라우저 준비
-1. `./scripts/browser-mcp/browser-ensure-ready.sh` 를 실행해 `ready` 확인합니다.
+1. `./scripts/browser-mcp/browser-ensure-ready-cs.sh` 를 실행해 `ready` 확인합니다.
 2. 브라우저가 준비되지 않으면 아래 명령으로 queue 를 실패 처리합니다.
 ```bash
 ./scripts/navertalk-delivery-queue-fail.mjs <approvalId> browser_not_ready
 ```
 3. 실패 처리 후 현재 세션에 짧게 보고하고 종료합니다.
+4. 로그인 페이지 또는 `#/home/about` 가 보이면 자동 로그인 버튼 클릭 없이 `login_required` 로 실패 처리하고 보고합니다.
 
 [4] 실제 톡톡 반영
 1. `talkUrl` 탭을 열거나 기존 탭을 재사용합니다.

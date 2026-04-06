@@ -32,13 +32,13 @@
 ```
 4. 실패 처리 후 현재 세션에 짧게 보고하고 종료합니다.
 
-[3-1] 로그인 해제 자동 복구
+[3-1] 로그인 해제 처리
 1. 로그인 확인을 위해 `https://sell.smartstore.naver.com/` 루트나 `#/comment/` 를 별도 새탭으로 열지 않습니다.
 2. `talkUrl` 탭을 재사용하거나, 필요할 때만 백그라운드 임시 탭으로 `talkUrl` 을 확인합니다.
 3. 그 결과가 `https://sell.smartstore.naver.com/#/home/about` 또는 `accounts.commerce.naver.com/login...` 이면 로그인 필요 상태로 판단합니다.
-4. 이 경우 `로그인하기` 버튼과 `김*호 님 / 네이버 아이디로 간편 로그인 / sos8*** 님` 버튼을 이용해 자동 로그인 1회만 시도합니다.
+4. 자동 로그인 버튼 클릭, 간편 로그인 클릭, 기존 Chrome(user 프로필) 로그인 시도는 금지합니다.
 5. 퀵스타 조회가 필요한 경우에만 `https://quickstar.co.kr/mypage/mypage.php` 를 확인합니다.
-6. 자동 로그인 시도 후에도 미복구면 임시 탭은 닫고 아래 명령으로 queue 를 실패 처리합니다.
+6. 로그인 필요 상태면 임시 탭은 닫고 아래 명령으로 즉시 queue 를 실패 처리합니다.
 ```bash
 ./scripts/navertalk-delivery-queue-fail.mjs <approvalId> login_required
 ```
@@ -46,8 +46,8 @@
 ```text
 [로그인 해제 알림]
 - 스마트스토어 또는 퀵스타 로그인 해제 상태
-- 자동 로그인 1회 시도 후에도 미복구
-- 조치 필요: 자동화 Chrome에서 로그인 확인
+- 자동 로그인 시도 없이 작업 중단
+- 조치 필요: 대표님이 9223 자동화 Chrome에서 로그인 확인
 ```
 
 [4] 실제 톡톡 반영

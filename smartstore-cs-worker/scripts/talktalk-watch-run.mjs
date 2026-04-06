@@ -52,28 +52,6 @@ async function ensureSmartstoreLogin(context) {
     await page.goto(talkUrl, { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(() => {});
   }
   await sleep(2000);
-  let url = page.url();
-  if (url.startsWith('https://sell.smartstore.naver.com/#/home/about')) {
-    const loginBtn = page.getByText('로그인하기', { exact: true }).first();
-    if (await loginBtn.isVisible({ timeout: 3000 }).catch(() => false)) { await loginBtn.click({ timeout: 3000 }).catch(() => {}); await sleep(2500); }
-  }
-  url = page.url();
-  if (url.includes('accounts.commerce.naver.com/login')) {
-    const candidates = [
-      page.getByText(/김\*호.*네이버 아이디로 간편 로그인.*sos8\*\*\*/),
-      page.getByText(/네이버 아이디로 간편 로그인/),
-      page.locator('button, a, div[role="button"]').filter({ hasText: '네이버 아이디로 간편 로그인' }),
-      page.locator('button, a, div[role="button"]').filter({ hasText: /sos8\*\*\*/ }),
-    ];
-    for (const loc of candidates) {
-      try {
-        const first = loc.first();
-        if (await first.isVisible({ timeout: 2000 })) { await first.click({ timeout: 3000 }).catch(() => {}); await sleep(4000); break; }
-      } catch {}
-    }
-  }
-  await page.goto(talkUrl, { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(() => {});
-  await sleep(2500);
   const finalUrl = page.url();
   const body = clean(await page.locator('body').textContent().catch(() => ''));
   const ok = !finalUrl.includes('/login') && !finalUrl.startsWith('https://sell.smartstore.naver.com/#/home/about') && /톡톡|채팅|대화|고객/.test(body + ' ' + finalUrl);
