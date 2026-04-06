@@ -23,22 +23,26 @@
 3. `approvalId`, `customerName`, `productName`, `draft`, `queuePath` 를 확보합니다.
 
 [3] 브라우저 준비
-1. `./scripts/browser-mcp/browser-ensure-ready.sh` 를 실행해 `ready` 확인합니다.
-2. 브라우저가 준비되지 않으면 아래 명령으로 queue 를 실패 처리합니다.
+1. `./scripts/browser-mcp/browser-ensure-ready-cs.sh` 를 실행해 `ready` 확인합니다.
+2. 일반 Chrome(user 프로필)에는 붙지 않습니다. browser 도구를 쓰더라도 자동화 Chrome(9223)만 사용합니다.
+2-1. 자동화 Chrome 창은 백그라운드 전용으로 취급하고, 불필요하게 앞으로 가져오지 않습니다.
+3. 브라우저가 준비되지 않으면 아래 명령으로 queue 를 실패 처리합니다.
 ```bash
 ./scripts/navertalk-delivery-queue-fail.mjs <approvalId> browser_not_ready
 ```
-3. 실패 처리 후 현재 세션에 짧게 보고하고 종료합니다.
+4. 실패 처리 후 현재 세션에 짧게 보고하고 종료합니다.
 
 [3-1] 로그인 해제 자동 복구
-1. 스마트스토어/톡톡 접근 시 `https://sell.smartstore.naver.com/#/home/about` 로 이동되면 로그인 필요 상태로 판단합니다.
-2. 이 경우 `로그인하기` 버튼을 클릭하고, 이어서 `김*호 님 / 네이버 아이디로 간편 로그인 / sos8*** 님` 버튼을 클릭해 자동 로그인 1회 시도합니다.
-3. 퀵스타 조회가 필요한 경우 `https://quickstar.co.kr/mypage/mypage.php` 접속 시 로그인 필요 상태면 `<a class="new_login_bt">로그인</a>` 버튼을 클릭해 자동 로그인 1회 시도합니다.
-4. 자동 로그인 시도 후에도 미복구면 아래 명령으로 queue 를 실패 처리합니다.
+1. 로그인 확인을 위해 `https://sell.smartstore.naver.com/` 루트나 `#/comment/` 를 별도 새탭으로 열지 않습니다.
+2. `talkUrl` 탭을 재사용하거나, 필요할 때만 백그라운드 임시 탭으로 `talkUrl` 을 확인합니다.
+3. 그 결과가 `https://sell.smartstore.naver.com/#/home/about` 또는 `accounts.commerce.naver.com/login...` 이면 로그인 필요 상태로 판단합니다.
+4. 이 경우 `로그인하기` 버튼과 `김*호 님 / 네이버 아이디로 간편 로그인 / sos8*** 님` 버튼을 이용해 자동 로그인 1회만 시도합니다.
+5. 퀵스타 조회가 필요한 경우에만 `https://quickstar.co.kr/mypage/mypage.php` 를 확인합니다.
+6. 자동 로그인 시도 후에도 미복구면 임시 탭은 닫고 아래 명령으로 queue 를 실패 처리합니다.
 ```bash
 ./scripts/navertalk-delivery-queue-fail.mjs <approvalId> login_required
 ```
-5. 실패 처리 후 현재 세션에는 아래 형식으로만 짧게 보고합니다.
+7. 실패 처리 후 현재 세션에는 아래 형식으로만 짧게 보고합니다.
 ```text
 [로그인 해제 알림]
 - 스마트스토어 또는 퀵스타 로그인 해제 상태

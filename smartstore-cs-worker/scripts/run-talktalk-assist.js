@@ -15,12 +15,13 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const clean = (v) => String(v || '').replace(/\s+/g, ' ').trim();
 
 async function getTalkPage(context) {
-  let page = context.pages().find((p) => p.url().includes('/talktalk/chat'));
+  let page = context.pages().find((p) => p.url().includes('/talktalk/chat') || p.url().startsWith('https://sell.smartstore.naver.com/'));
   if (!page) {
     page = await context.newPage();
     await page.goto('https://sell.smartstore.naver.com/#/talktalk/chat', { waitUntil: 'domcontentloaded' });
+  } else if (!page.url().includes('/talktalk/chat')) {
+    await page.goto('https://sell.smartstore.naver.com/#/talktalk/chat', { waitUntil: 'domcontentloaded' }).catch(() => {});
   }
-  await page.bringToFront().catch(() => {});
   await sleep(1000);
   return page;
 }
@@ -329,6 +330,8 @@ async function main() {
               templateCode: 'invoice_first_delivery_result',
               text: deliveryDraft.text,
               tone: 'long',
+              quickstarChecked: true,
+              quickstarStatus: shipment.status,
               invoiceNo: shipmentMeta.invoiceNo,
               orderNo: shipmentMeta.orderNo,
               quickstarQuery: { find: 'gr_tc_invoice', value: shipmentMeta.invoiceNo },
@@ -338,6 +341,8 @@ async function main() {
             draft = {
               ...draft,
               route: 'handoff_required',
+              quickstarChecked: false,
+              quickstarStatus: shipment?.status || null,
               reason: shipment.loginRequired ? 'quickstar_login_required' : 'quickstar_no_result',
             };
           }
