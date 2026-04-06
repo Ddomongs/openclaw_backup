@@ -5,7 +5,7 @@ import { chromium } from 'playwright';
 const OUT_DIR = '/Users/dh/.openclaw/workspace/smartstore-cs-worker/analysis';
 const OUT_JSON = path.join(OUT_DIR, 'talktalk_patterns_2026-04-04.json');
 const OUT_MD = path.join(OUT_DIR, 'talktalk_patterns_2026-04-04.md');
-const CDP_URL = process.env.CSBOT_CDP_URL || 'http://127.0.0.1:9223';
+const CDP_URL = 'http://127.0.0.1:9223';
 const MAX_CONVERSATIONS = Number(process.env.CSBOT_TALKTALK_ANALYZE_LIMIT || 30);
 
 async function detachCdpBrowser(browser) {

@@ -3,7 +3,7 @@ import { buildTalktalkDraft } from '../src/talktalk-drafts.js';
 import { buildTalktalkAssistItem, writeTalktalkAssistReport } from '../src/talktalk-assist.js';
 import { buildRichDeliveryDraft, ensureQuickstarSession, fetchQuickstarByInvoice, getOrCreateQuickstarPage, getOrCreateQuickstarWorkerPage } from '../src/quickstar-direct.js';
 
-const CDP_URL = process.env.CSBOT_CDP_URL || 'http://127.0.0.1:9223';
+const CDP_URL = 'http://127.0.0.1:9223';
 const REPORT_PATH = process.env.CSBOT_TALKTALK_REPORT_PATH || '/Users/dh/.openclaw/workspace/smartstore-cs-worker/runtime-data/talktalk-assist-latest.md';
 const LIMIT = Number(process.env.CSBOT_TALKTALK_ASSIST_LIMIT || 10);
 

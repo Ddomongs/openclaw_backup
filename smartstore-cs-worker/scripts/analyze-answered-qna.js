@@ -5,7 +5,7 @@ import { chromium } from 'playwright';
 const OUT_DIR = '/Users/dh/.openclaw/workspace/smartstore-cs-worker/analysis';
 const OUT_JSON = path.join(OUT_DIR, 'qna_answered_samples_2026-04-04.json');
 const OUT_MD = path.join(OUT_DIR, 'qna_answered_summary_2026-04-04.md');
-const CDP_URL = process.env.CSBOT_CDP_URL || 'http://127.0.0.1:9223';
+const CDP_URL = 'http://127.0.0.1:9223';
 
 async function detachCdpBrowser(browser) {
   await browser?._connection?.close?.();

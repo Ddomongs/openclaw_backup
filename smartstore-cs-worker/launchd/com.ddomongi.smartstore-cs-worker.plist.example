@@ -13,8 +13,6 @@
 
     <key>EnvironmentVariables</key>
     <dict>
-      <key>CSBOT_CDP_URL</key>
-      <string>http://127.0.0.1:9223</string>
       <key>CSBOT_SMARTSTORE_QA_URL</key>
       <string>https://sell.smartstore.naver.com/#/comment/</string>
       <key>CSBOT_QUICKSTAR_BASE_URL</key>

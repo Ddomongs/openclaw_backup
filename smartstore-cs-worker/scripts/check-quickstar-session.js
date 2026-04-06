@@ -1,7 +1,7 @@
 import { chromium } from 'playwright';
 import { ensureQuickstarSession, getOrCreateQuickstarPage } from '../src/quickstar-direct.js';
 
-const CDP_URL = process.env.CSBOT_CDP_URL || 'http://127.0.0.1:9223';
+const CDP_URL = 'http://127.0.0.1:9223';
 
 async function detachCdpBrowser(browser) {
   await browser?._connection?.close?.();

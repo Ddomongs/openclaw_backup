@@ -41,10 +41,10 @@ npm install
 ```
 
 이 스크립트는 아래 기준으로 Chrome을 띄웁니다.
-- CDP 포트: `9223`
+- CDP 포트: `9223` (CS 전용 하드고정)
 - 프로필 경로: `smartstore-cs-worker/runtime-data/chrome-profile`
-- 스마트스토어 상품 Q&A 페이지 자동 오픈
-- 퀵스타 페이지도 함께 열어 로그인 세션 유지 가능
+- 시작 시 백그라운드 전용 자동화 창만 띄움
+- 실제 스마트스토어/퀵스타 페이지는 필요 시에만 재사용/접속
 
 상태 확인:
 ```bash
@@ -64,9 +64,9 @@ npm install
 npm run run:once
 ```
 
-또는 환경값을 명시해서 실행:
+또는 직접 실행:
 ```bash
-CSBOT_CDP_URL=http://127.0.0.1:9223 npm run run:once
+npm run run:once
 ```
 
 ## 안전 기본값
@@ -83,7 +83,7 @@ CSBOT_CDP_URL=http://127.0.0.1:9223 npm run run:once
 
 ## 톡톡 초안보조 실행
 ```bash
-CSBOT_CDP_URL=http://127.0.0.1:9223 node scripts/run-talktalk-assist.js
+node scripts/run-talktalk-assist.js
 ```
 
 - 출력 리포트:
@@ -97,6 +97,7 @@ CSBOT_CDP_URL=http://127.0.0.1:9223 node scripts/run-talktalk-assist.js
   - 대화 수집 → 케이스 분류 → 추천 초안 생성 → 대표님 판단 메모 칸 포함 리포트 생성
 
 ## 환경 변수 예시
+주의: CS 관련 CDP 포트는 `9223` 하드고정이며, `.env`로 변경하지 않습니다.
 `.env.example` 참고
 
 ## 파일 구조
@@ -105,6 +106,6 @@ CSBOT_CDP_URL=http://127.0.0.1:9223 node scripts/run-talktalk-assist.js
 - `src/smartstore-selectors.js`: 스마트스토어 현장 selector 보정 지점
 - `src/quickstar-direct.js`: 퀵스타 직접 조회/파싱/초안 생성
 - `src/run-once.js`: 1회 실행 worker
-- `scripts/start-automation-chrome.sh`: 전용 자동화 Chrome 실행
-- `scripts/check-automation-chrome.sh`: 전용 자동화 Chrome 상태 확인
+- `scripts/start-automation-chrome.sh`: 전용 자동화 Chrome 실행 (9223 하드고정)
+- `scripts/check-automation-chrome.sh`: 전용 자동화 Chrome 상태 확인 (9223 하드고정)
 - `launchd/com.ddomongi.smartstore-cs-worker.plist.example`: launchd 예시

@@ -9,7 +9,7 @@ if [ -d "$LEGACY_PROFILE_DIR" ]; then
 else
   PROFILE_DIR="${CSBOT_PROFILE_DIR:-$DEFAULT_PROFILE_DIR}"
 fi
-CDP_PORT="${CSBOT_CDP_PORT:-9223}"
+CDP_PORT="9223"
 CHROME_APP_NAME="Google Chrome"
 LOG_FILE="$WORKDIR/runtime-data/chrome.log"
 MARKER_URL='data:text/html,<title>[CSBOT 9223] background</title><body style="font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;padding:24px;background:#0f172a;color:#e2e8f0;"><h1>[CSBOT 9223] background</h1><p>Smartstore CS automation background window.</p></body>'
