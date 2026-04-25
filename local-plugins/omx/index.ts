@@ -190,7 +190,7 @@ export default definePluginEntry({
       description: "Use real `omx explore` for read-only codebase/repository exploration.",
       parameters: { type: "object", required: ["prompt"], properties: commonPromptProps },
       async execute(_toolCallId: string, input: RunInput) {
-        return executeOmx(api, "explore", input);
+        return executeOmx(api, "explore", input, ["--prompt"]);
       },
     });
 
