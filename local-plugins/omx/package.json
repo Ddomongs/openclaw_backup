@@ -1,0 +1,12 @@
+{
+  "name": "openclaw-omx-bridge",
+  "version": "1.0.0",
+  "private": true,
+  "description": "OpenClaw local plugin exposing the real oh-my-codex CLI as omx_* tools.",
+  "main": "index.ts",
+  "openclaw": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}
