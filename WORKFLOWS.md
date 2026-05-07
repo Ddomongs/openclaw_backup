@@ -88,6 +88,9 @@
 10. 주문상세 팝업의 단순 `배송중` 상태나 중간 경고 문구만 보고 임의 초안을 작성하지 않는다.
 11. 최근 대화 3~5개와 함께 **로컬에서** Discord 승인 카드 초안을 생성한다.
 12. 대표 승인 후에만 실제 톡톡 반영을 진행한다.
+   - 승인 전에는 고객 톡톡으로 실제 발송하지 않는다.
+   - 배송문의도 `초안 생성 → approval 카드 → 대표 승인 → 실제 발송` 순서를 반드시 지킨다.
+   - approval 생성이나 outbox 적재는 가능하지만, 승인 없이 delivery queue 발송 단계로 넘어가면 안 된다.
 13. 조건 검색 값이 비어 있으면 퀵스타 로그인 상태부터 다시 확인하고, 그래도 비면 tracking.tipoasis.com / 유니패스 / 국내택배를 보조 확인한다.
 
 ### Discord 승인 카드 운영 방식
@@ -152,18 +155,26 @@
    - 완료 보고 payload 생성: `scripts/navertalk-delivery-report-payload.mjs`
 
 ### cron worker 구성
+- 기준 cron 은 2개만 유지한다.
+  1. `톡톡 approval auto loop`
+  2. `톡톡 delivery queue worker`
 - approval/outbox 자동 루프 프롬프트: `scripts/cron-messages/navertalk-auto-worker-message.txt`
 - delivery queue 처리 프롬프트: `scripts/cron-messages/navertalk-delivery-worker-message.txt`
+- approval auto loop 실행 진입점: `scripts/run-navertalk-auto-loop.sh`
+- delivery worker preflight 실행 진입점: `scripts/run-navertalk-delivery-worker.sh`
 - cron 설치 스크립트: `scripts/setup-navertalk-auto-crons.sh`
-- cron 메시지 갱신 스크립트: `scripts/update-navertalk-auto-crons.sh`
+- 기존 watcher/fallback 전용 설치 스크립트 `scripts/setup-talktalk-local-watch-crons.sh` 는 메인 cron 구성으로 위임하는 deprecated wrapper 로 유지한다.
 
 ### delivery queue 실제 처리 순서
 1. `navertalk-delivery-queue-next.mjs` 로 가장 오래된 `queued` 건을 `processing` 으로 가져온다.
-2. 브라우저에서 해당 고객 상담을 열고 approval 의 `draft` 를 실제 톡톡 입력창에 반영한다.
-3. 전송 직후 방금 보낸 메시지 말풍선 영역을 부분 캡처한다.
-4. `navertalk-delivery-queue-complete.mjs <approvalId> <screenshotPath>` 로 상태를 `done` 으로 갱신한다.
-5. `navertalk-delivery-report-payload.mjs <approvalId> <screenshotPath> [sentAt]` 로 Discord 완료 보고 payload 를 만든다.
-6. 완료 보고를 전송하고 다음 queue 건으로 이동한다.
+2. `run-navertalk-delivery-worker.sh` 로 설정 확인 / 스크린샷 경로 준비 / 브라우저 준비를 한 번에 점검한다.
+3. 브라우저에서 해당 고객 상담을 열고 approval 의 `draft` 를 실제 톡톡 입력창에 반영한다.
+4. `#/home/about` 또는 로그인 페이지면 `로그인하기` → `button.Login_btn_login__NC-qz` 순서로 로그인 복구를 먼저 시도한다.
+5. 전송 후 `button.btn.btn_positive.N\=a\:chu\.close` (`상담완료`) 버튼을 눌러 상담완료 처리한다.
+6. 전송 직후 방금 보낸 메시지 말풍선 영역을 부분 캡처한다.
+7. `navertalk-delivery-queue-complete.mjs <approvalId> <screenshotPath>` 로 상태를 `done` 으로 갱신한다.
+8. `navertalk-delivery-report-payload.mjs <approvalId> <screenshotPath> [sentAt]` 로 Discord 완료 보고 payload 를 만든다.
+9. 완료 보고를 전송하고 다음 queue 건으로 이동한다.
 
 ### 동시 접수 / 승인 큐 원칙
 - 문의가 2~3건 이상 동시에 들어와도 대표는 완료 보고를 기다리지 않고 다음 승인 카드를 계속 처리한다.
@@ -489,3 +500,73 @@
 - 자동화는 가능하면 API → 스크립트 → GUI 순으로 우선순위를 둔다.
 - 같은 작업이 여러 경로에서 중복 실행되지 않게 한다.
 - 중요한 운영 판단은 세션에만 두지 말고 문서에 남긴다.
+
+---
+
+## 9. 스마트스토어 상품 URL 기반 상세페이지 이미지 생성 루틴
+
+### 목적
+대표님이 스마트스토어 상품 URL 1개를 주면, 기존 상품페이지를 분석해 상세페이지용 이미지 10~12장과 업로드용 파일을 반복 생성한다.
+
+### 트리거 문구
+- `상세페이지 이미지 루틴: [상품 URL]`
+- `이 상품 상세페이지 이미지 만들어줘: [상품 URL]`
+- `URL 줄게, 상세페이지 루틴대로 진행`
+
+### 기본 산출물
+- 원본 상품 캡처
+- 상품 데이터 요약
+- image 2 프롬프트팩
+- 생성 이미지 원본 10~12장
+- 업로드용 860px 복사본
+- QA 요약 및 사용/비추천 이미지 구분
+
+### 표준 진행 순서
+1. URL을 받으면 추가 질문 없이 시작한다.
+2. 스마트스토어 상품이면 CS/스마트스토어 브라우저 작업으로 분류한다.
+3. `ALLOW_LEGACY_9223=1 ./scripts/browser-mcp/browser-ensure-ready-cs.sh` 로 9223 자동화 브라우저 준비를 확인한다.
+4. 상품 URL 접속 전 스토어 홈/카테고리 경유로 워밍업해 429/로그인 우회를 줄인다.
+5. 상품 첫 화면, 전체 화면, 구간 스크린샷을 저장한다.
+6. 스마트스토어 공개 상품 API/페이지 텍스트 기준으로 아래 정보를 추출한다.
+   - 상품명
+   - 가격/할인율
+   - 리뷰 수/평점
+   - 구성/옵션
+   - 배송비/배송기간
+   - 제조사/원산지/상품속성
+   - 실제 리뷰 문장
+7. 추출 정보만 근거로 카피를 만든다. 판매량/인증/정품/공식 표현은 확인된 경우에만 쓴다.
+8. 10~12장 상세페이지 구조를 만든다.
+   - Hook
+   - 문제 공감
+   - Before/After
+   - 핵심 가치 5장
+   - 신뢰/리뷰
+   - 상세 정보표
+   - 구매 전 체크
+   - CTA
+9. image 2 생성 시 한글 카피 포함을 허용한다.
+10. 상표/로고/정품 표현 리스크가 있으면 안전 버전을 우선 생성한다.
+11. 생성 후 이미지 QA를 진행한다.
+   - 한글 가독성
+   - 오탈자
+   - 제품 유사성
+   - 상표/로고 리스크
+   - 주행 중 사용처럼 보이는 안전 리스크
+   - 스마트스토어 사용 적합성
+12. 원본은 `outputs/<상품-slug>/generated-*.png` 로 보관한다.
+13. 업로드용 860px 복사본은 `outputs/<상품-slug>/upload-860/` 에 따로 만든다.
+14. 최종 보고에는 파일 위치, 사용 추천 이미지, 주의 이미지, 다음 단계만 짧게 적는다.
+
+### 파일명 규칙
+- 작업 폴더: `outputs/<상품-slug>/`
+- 캡처: `product-first-view.png`, `product-full-page.png`, `product-section-*.png`
+- 원본 이미지: `generated-01-hook-safe.png` ~ `generated-12-cta.png`
+- 업로드용: `upload-860/01-hook-safe.png` ~ `upload-860/12-cta.png`
+- 프롬프트팩: `<상품-slug>-image2-prompt-pack.md`
+
+### 주의사항
+- 한글 텍스트가 일부 깨질 수 있으므로 QA에서 반드시 확인한다.
+- `정품`, `공식`, `100% 보장`, 브랜드명 직접 사용은 상품페이지 근거와 상표 리스크를 함께 확인한다.
+- 차량용/전자제품은 주행 중 사용을 권장하는 장면을 피하고, 필요 시 `정차 중 사용 권장` 문구를 넣는다.
+- 스마트스토어 공개 정보와 다른 수치/후기는 쓰지 않는다.
