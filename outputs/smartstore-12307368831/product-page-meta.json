@@ -1,0 +1,103 @@
+{
+  "url": "https://nid.naver.com/nidlogin.login?url=https%3A%2F%2Fsmartstore.naver.com%2Fddomongs%2Fproducts%2F12307368831",
+  "title": "네이버 : 로그인",
+  "metas": [
+    {
+      "name": null,
+      "property": null,
+      "content": null
+    },
+    {
+      "name": null,
+      "property": null,
+      "content": "IE=edge, chrome=1"
+    },
+    {
+      "name": "viewport",
+      "property": null,
+      "content": "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    },
+    {
+      "name": null,
+      "property": "og:type",
+      "content": "website"
+    },
+    {
+      "name": null,
+      "property": "og:title",
+      "content": "네이버"
+    },
+    {
+      "name": null,
+      "property": "og:description",
+      "content": "네이버에 로그인 하고 나를 위한 다양한 서비스를 이용해 보세요"
+    },
+    {
+      "name": null,
+      "property": "og:image",
+      "content": "https://ssl.pstatic.net/static/nid/account/naver_og_image.png"
+    },
+    {
+      "name": null,
+      "property": "og:image:type",
+      "content": "image/png"
+    },
+    {
+      "name": null,
+      "property": "og:image:width",
+      "content": "1200"
+    },
+    {
+      "name": null,
+      "property": "og:image:height",
+      "content": "630"
+    },
+    {
+      "name": "description",
+      "property": null,
+      "content": "네이버에 로그인 하고 다양한 서비스를 이용해 보세요"
+    },
+    {
+      "name": "robots",
+      "property": null,
+      "content": "index, follow"
+    },
+    {
+      "name": "Keywords",
+      "property": null,
+      "content": "네이버 로그인"
+    }
+  ],
+  "imgs": [],
+  "resources": [
+    "https://nid.naver.com/login/css/global/desktop/w_20260225.css?20260410",
+    "https://nid.naver.com/login/js/srcOnError.js",
+    "https://ssl.pstatic.net/tveta/libs/glad/prod/gfp-core.js",
+    "https://nid.naver.com/passkey/js/passkeyApi.js?v=20251201",
+    "https://nid.naver.com/login/js/v3/default/default_ecc.js?v=20260409",
+    "https://ncpt.naver.com/static/ncaptcha-api.js?ncaptcha-sitekey=6e3d93f4f845d053db08d51e2eb36ca3efe03fea21f21ee8d02e60ef10f6b73a15e951eccc1ef4b866ab3ce4",
+    "https://ssl.pstatic.net/static/nid/login/sprite/m_sp_00_common_978240a6.png",
+    "https://ssl.pstatic.net/static/nid/login/sprite/m_sp_01_login_a9813a07.png",
+    "https://ssl.pstatic.net/static/nid/webfont/Pretendard-Regular.woff2",
+    "https://ssl.pstatic.net/static/nid/webfont/Pretendard-Bold.woff2",
+    "https://ssl.pstatic.net/static/nid/webfont/Pretendard-Medium.woff2",
+    "https://ntm.pstatic.net/scripts/ntm_109a32482d88.js",
+    "https://nid.naver.com/login/dynamicEcKey/DHg8eJD-yx4Qwvl-ruk8UJkVzr7U-cVKpkj_9Jp6w5o18UH5TNynEjBdz4SlhDMM1SosciSK1scWxfRZ8GGxUyr_l5FJ7dSHVnBDOGz_c0Q",
+    "https://wtm.pstatic.net/508e018/58b3e8e539ad7984d0de.js",
+    "https://ssl.pstatic.net/tveta/libs/glad/prod/3.10.2/gfp-display-sdk.js",
+    "https://ntm.pstatic.net/ex/nlog.js",
+    "https://wtm.pstatic.net/508e018/f062e637a67dc65e5bf5.wasm",
+    "https://ssl.pstatic.net/melona/libs/gfp-nac-module/synchronizer.js",
+    "https://nlog.naver.com/n",
+    "https://nam.veta.naver.com/gfp/v1?u=p_member_login&xdid=log.banner&p=da_dom_id%3Alog.banner&an=nid.naver.com&c=https%3A%2F%2Fnid.naver.com%2Fnidlogin.login%3Furl%3Dhttps%253A%252F%252Fsmartstore.naver.com%252Fddomongs%252Fproducts%252F12307368831&sn=web&sv=3.10.2&nt=0&iv=8eb12cdd-249f-4f91-a686-05bd8ef720b8&ivt=0&sa=0&rui=804543455&br=0&sua=%7B%22browsers%22%3A%5B%7B%22brand%22%3A%22Google%20Chrome%22%2C%22version%22%3A%5B%22147%22%2C%220%22%2C%227727%22%2C%22138%22%5D%7D%2C%7B%22brand%22%3A%22Chromium%22%2C%22version%22%3A%5B%22147%22%2C%220%22%2C%227727%22%2C%22138%22%5D%7D%5D%2C%22platform%22%3A%7B%22brand%22%3A%22macOS%22%2C%22version%22%3A%5B%2226%22%2C%224%22%2C%221%22%5D%7D%2C%22mobile%22%3A0%2C%22architecture%22%3A%22arm%22%2C%22bitness%22%3A%2264%22%2C%22model%22%3A%22%22%7D",
+    "https://ssl.pstatic.net/tveta/libs/glad/prod/3.10.2/gfp-display-nda.js",
+    "https://tivan.naver.com/sc2/1/",
+    "https://siape.veta.naver.com/openrtb/nurl?eu=EU10043129&calp=-&oj=VPhIBnd%2Bx8NRWDK0PakEMkCI%2FrXuwVha60crI51vutsJAKCkY7F7ki0sbS%2FNv4qieBM%2Fw%2FqBmqpxgP1XlImLBMfqckVN7%2Bj6T8vfDXbfsfPCETkNfdfepWpPFNUKvEkgHRv%2BGJHtyM6B44Um51kqcFruZg50f5DfeEprif87dAuNPc%2FL%2B6Rb4IAL1YSRewqdbhlnDbVexVyod25%2BUCEhrrLi3rUncOi72gVQfu7%2F2V4i2oD%2B2U6JISUdnOfntcrlG%2FCQboolXFE4tbKiRbUTDWRYnm4OZ5%2B6XRnKv%2B%2FrMWfQo6KBoelJQI09z8v7pFvg5VhZunKcJ9IgKl79Qj1IE5FvEvY7WPnRTkl1%2BuVLFRqIyYBo1npSJ6O7HxKyjsJmREE1bjxtyiE&ac=9277027&src=8098058&evtcd=BID_WIN&x_ti=1425&rk=i1cJtGdQPn8H4iEYj5hSbw&eltts=Zqc7sJp57lYXAbVlQUc%2FWw%3D%3D&brs=Y&dummy=0.3710592491207947",
+    "https://ssl.pstatic.net/tveta/libs/glad/prod/3.10.2/res/r.html",
+    "https://tivan.naver.com/sc2/11/",
+    "https://tivan.naver.com/g/200/t_ZlIiCYRUswPytJRjNECWLMMD-MXv-9wRNJxQ4FQpUi4M6yRVsbdYj3L0o3OTACkshWL85qaP4k2Bn9kKZedLMoalCfPR0ICUKDqkf9BCeJe-p6gJ6w9Hjhdr21S0Hq_zU3ZPEqm-NW4kyFt477AfnX2_SlLIDXDBdExZ_kQaJc8IuHnEHNgThW-BSIaEDMETGIOspuFa8kc6bvj1-08EAzIA5DHOjX_ByH3k8yO4OUKP4hD7nUM9kYvPv7EZp3Zac6ZE8nc2SJiyPGWPo1bpItadPfQKorkYZWBGbJoFPHtlSSdUUVuGtRwZDWOe65sDGHBtqxNjnpGKVnGgIpGVqyb84h75XznjkdWemtoZ7p7GoYD2bZIiyKzemvP0jvYvGEP3KI98cSVAihC07hXr15f6P2nSmc9PM3CLlBQkCAtvHrBtuvVebiDnju_gCPH705a029BdPm_XJwId6Rdyx1FsI2IMVw5ruAQ8NlT0nO5POnu3HMYGC-yGzaWBc5XwZjo-wtgkBNf-QJJROqs7a9zktf23i5V_55HVbPKz61xx1vBCkD63dxyHQ52oDfmxOZlIOAMZ0usIh-wN6-D54WCd1JO4qtwqkHKxoYbEpBP-gnR7ZPpVORt0Hiyovecum3xc8bk9j7S1KNPbGeFqXYoXuHesWmpny4yn9Jvt9KRvBnqDH4PNDRSFYntrS6tN_85RCeo0K9b-ts6tk-qE4QHFL8tBW6o-eu6mhmAOGUJMDbNx2kv-GGVR7SXoEx0ap3IC84FkM00efXQGTi5imsCup8SnjUCcMl-nH35yjGNQpL-rn_8pRKSlUNg3e1JH_8fLR5D7e8f64Irah5jvW3qp88R5SboC1cQYDFoq6RZS-mRz2GxHFgLUHVyR8g-wlczZI0ihxekNjE9ME7VQ/NE?dummy=0.2112301271739414",
+    "https://tivan.naver.com/sc2/12/",
+    "https://tivan.naver.com/g/201_205/t_ZlIiCYRUswPytJRjNECWLMMD-MXv-9wRNJxQ4FQpUi4M6yRVsbdYj3L0o3OTACkshWL85qaP4k2Bn9kKZedLMoalCfPR0ICUKDqkf9BCeJe-p6gJ6w9Hjhdr21S0Hq_zU3ZPEqm-NW4kyFt477AfnX2_SlLIDXDBdExZ_kQaJc8IuHnEHNgThW-BSIaEDMETGIOspuFa8kc6bvj1-08EAzIA5DHOjX_ByH3k8yO4OUKP4hD7nUM9kYvPv7EZp3Zac6ZE8nc2SJiyPGWPo1bpItadPfQKorkYZWBGbJoFPHtlSSdUUVuGtRwZDWOe65sDGHBtqxNjnpGKVnGgIpGVqyb84h75XznjkdWemtoZ7p7GoYD2bZIiyKzemvP0jvYvGEP3KI98cSVAihC07hXr15f6P2nSmc9PM3CLlBQkCAtvHrBtuvVebiDnju_gCPH705a029BdPm_XJwId6Rdyx1FsI2IMVw5ruAQ8NlT0nO5POnu3HMYGC-yGzaWBc5XwZjo-wtgkBNf-QJJROqs7a9zktf23i5V_55HVbPKz61xx1vBCkD63dxyHQ52oDfmxOZlIOAMZ0usIh-wN6-D54WCd1JO4qtwqkHKxoYbEpBP-gnR7ZPpVORt0Hiyovecum3xc8bk9j7S1KNPbGeFqXYoXuHesWmpny4yn9Jvt9KRvBnqDH4PNDRSFYntrS6tN_85RCeo0K9b-ts6tk-qE4QHFL8tBW6o-eu6mhmAOGUJMDbNx2kv-GGVR7SXoEx0ap3IC84FkM00efXQGTi5imsCup8SnjUCcMl-nH35yjGNQpL-rn_8pRKSlUNg3e1JH_8fLR5D7e8f64Irah5jvW3qp88R5SboC1cQYDFoq6RZS-mRz2GxHFgLUHVyR8g-wlczZI0ihxekNjE9ME7VQ/NE?dummy=0.7342198653508434"
+  ],
+  "scripts": []
+}
