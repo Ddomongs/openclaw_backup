@@ -1,0 +1,102 @@
+[
+  {
+    "no": 1,
+    "file": "images/01_01_cover.png",
+    "title": "cover"
+  },
+  {
+    "no": 2,
+    "file": "images/02_02_toc.png",
+    "title": "toc"
+  },
+  {
+    "no": 3,
+    "file": "images/03_03_conditions.png",
+    "title": "conditions"
+  },
+  {
+    "no": 4,
+    "file": "images/04_04_criteria.png",
+    "title": "criteria"
+  },
+  {
+    "no": 5,
+    "file": "images/05_05_distance.png",
+    "title": "distance"
+  },
+  {
+    "no": 6,
+    "file": "images/06_06_budget.png",
+    "title": "budget"
+  },
+  {
+    "no": 7,
+    "file": "images/07_07_gyeongju.png",
+    "title": "gyeongju"
+  },
+  {
+    "no": 8,
+    "file": "images/08_08_geoje_tongyeong.png",
+    "title": "geoje tongyeong"
+  },
+  {
+    "no": 9,
+    "file": "images/09_09_yeosu.png",
+    "title": "yeosu"
+  },
+  {
+    "no": 10,
+    "file": "images/10_10_danyang_jecheon.png",
+    "title": "danyang jecheon"
+  },
+  {
+    "no": 11,
+    "file": "images/11_11_gangneung_yangyang.png",
+    "title": "gangneung yangyang"
+  },
+  {
+    "no": 12,
+    "file": "images/12_12_schedule_compare.png",
+    "title": "schedule compare"
+  },
+  {
+    "no": 13,
+    "file": "images/13_13_ranking.png",
+    "title": "ranking"
+  },
+  {
+    "no": 14,
+    "file": "images/14_14_final_vote.png",
+    "title": "final vote"
+  },
+  {
+    "no": 15,
+    "file": "images/15_15_top2_decision_matrix.png",
+    "title": "top2 decision matrix"
+  },
+  {
+    "no": 16,
+    "file": "images/16_16_gyeongju_detail_options.png",
+    "title": "gyeongju detail options"
+  },
+  {
+    "no": 17,
+    "file": "images/17_17_geoje_tongyeong_detail_options.png",
+    "title": "geoje tongyeong detail options"
+  },
+  {
+    "no": 18,
+    "file": "images/18_18_june_july_calendar.png",
+    "title": "june july calendar"
+  },
+  {
+    "no": 19,
+    "file": "images/19_19_best_itinerary.png",
+    "title": "best itinerary"
+  },
+  {
+    "no": 20,
+    "file": "images/20_20_entertainment_kart_concept.png",
+    "title": "entertainment kart concept"
+  }
+]

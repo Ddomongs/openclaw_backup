@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#14213D" />
+<title>90년생 동창 1박2일 여행 후보 보고</title>
+<style>
+:root { --navy:#14213D; --blue:#2D6CDF; --bg:#F4F7FB; --card:#fff; --muted:#64748B; }
+* { box-sizing:border-box; }
+body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",Segoe UI,sans-serif; background:var(--bg); color:#111827; }
+header { position:sticky; top:0; z-index:20; background:rgba(20,33,61,.94); color:white; backdrop-filter:blur(12px); padding:14px 16px; box-shadow:0 8px 24px rgba(15,23,42,.18); }
+.header-row { max-width:1120px; margin:0 auto; display:flex; gap:12px; align-items:center; justify-content:space-between; }
+h1 { margin:0; font-size:18px; line-height:1.25; }
+.sub { color:#C7D2FE; font-size:12px; margin-top:3px; }
+.progress { font-size:13px; background:rgba(255,255,255,.14); padding:8px 10px; border-radius:999px; white-space:nowrap; }
+.toolbar { max-width:1120px; margin:12px auto 0; display:flex; gap:8px; overflow:auto; padding-bottom:2px; }
+button, a.btn { border:0; background:white; color:var(--navy); border-radius:999px; padding:9px 12px; font-weight:700; font-size:13px; text-decoration:none; box-shadow:0 2px 8px rgba(0,0,0,.12); cursor:pointer; white-space:nowrap; }
+button.primary { background:var(--blue); color:white; }
+main { max-width:1120px; margin:16px auto 110px; padding:0 12px; }
+.notice { background:#FFF7ED; border:1px solid #FDBA74; color:#7C2D12; border-radius:16px; padding:12px 14px; font-size:14px; margin:0 0 14px; }
+.toc { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:8px; margin-bottom:16px; }
+.toc a { display:flex; gap:8px; align-items:center; background:white; border:1px solid #E5E7EB; border-radius:14px; padding:10px; color:#111827; text-decoration:none; font-size:13px; box-shadow:0 2px 8px rgba(15,23,42,.06); }
+.toc b { display:inline-flex; width:28px; height:28px; border-radius:50%; background:#E8F1FF; color:var(--blue); align-items:center; justify-content:center; flex:0 0 auto; }
+.slide { background:var(--card); border-radius:22px; padding:12px; margin:0 0 18px; box-shadow:0 10px 30px rgba(15,23,42,.10); border:1px solid #E5E7EB; scroll-margin-top:128px; }
+.slide-head { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:4px 4px 10px; }
+.slide-title { font-weight:800; color:var(--navy); font-size:16px; }
+.slide-no { color:var(--muted); font-size:13px; }
+.slide img { width:100%; height:auto; border-radius:14px; display:block; background:#E5E7EB; }
+.actions { display:flex; gap:8px; padding-top:10px; flex-wrap:wrap; }
+.actions a { font-size:13px; color:var(--blue); text-decoration:none; font-weight:700; }
+.viewer { position:fixed; inset:0; z-index:50; background:#050816; display:none; flex-direction:column; }
+.viewer.open { display:flex; }
+.viewer-top { color:white; padding:12px 14px; display:flex; justify-content:space-between; align-items:center; gap:10px; }
+.viewer-title { font-weight:800; font-size:15px; }
+.viewer-close { background:rgba(255,255,255,.15); color:white; box-shadow:none; }
+.viewer-body { flex:1; display:flex; align-items:center; justify-content:center; overflow:hidden; padding:8px; }
+.viewer-body img { max-width:100%; max-height:100%; border-radius:12px; }
+.viewer-nav { display:flex; gap:10px; justify-content:center; padding:12px 14px 18px; }
+.viewer-nav button { min-width:96px; }
+.bottom-nav { position:fixed; left:0; right:0; bottom:0; z-index:25; background:rgba(255,255,255,.92); backdrop-filter:blur(12px); border-top:1px solid #E5E7EB; padding:10px 14px max(10px, env(safe-area-inset-bottom)); }
+.bottom-inner { max-width:1120px; margin:0 auto; display:flex; gap:8px; justify-content:center; }
+.bottom-inner button { flex:1; max-width:180px; }
+@media (max-width:640px) {
+  h1 { font-size:15px; } .sub { display:none; } .progress { font-size:12px; padding:7px 9px; }
+  main { padding:0 8px; margin-top:10px; } .toc { grid-template-columns:repeat(2,1fr); }
+  .slide { border-radius:16px; padding:8px; margin-bottom:12px; } .slide-title { font-size:14px; }
+}
+@media print { header,.toolbar,.toc,.bottom-nav,.actions,.notice { display:none; } main { max-width:none; margin:0; padding:0; } .slide { break-inside:avoid; box-shadow:none; border:0; margin:0 0 12px; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="header-row">
+    <div><h1>90년생 동창 1박2일 여행 후보 보고</h1><div class="sub">1~20번 슬라이드 웹 뷰어 · 모바일 최적화</div></div>
+    <div class="progress"><span id="cur">1</span> / 20</div>
+  </div>
+  <div class="toolbar">
+    <button class="primary" onclick="openViewer(currentIndex)">전체화면 보기</button>
+    <button onclick="document.querySelector('#toc').scrollIntoView({behavior:'smooth'})">목차</button>
+    <button onclick="window.print()">PDF 저장/인쇄</button>
+  </div>
+</header>
+<main>
+  <div class="notice">카카오톡 공유용은 이 폴더를 웹호스팅에 올리면 URL 하나로 볼 수 있습니다. 현재 파일은 로컬/업로드용 HTML 뷰어입니다.</div>
+  <section id="toc" class="toc">
+    <a href="#slide1"><b>1</b><span>cover</span></a>
+    <a href="#slide2"><b>2</b><span>toc</span></a>
+    <a href="#slide3"><b>3</b><span>conditions</span></a>
+    <a href="#slide4"><b>4</b><span>criteria</span></a>
+    <a href="#slide5"><b>5</b><span>distance</span></a>
+    <a href="#slide6"><b>6</b><span>budget</span></a>
+    <a href="#slide7"><b>7</b><span>gyeongju</span></a>
+    <a href="#slide8"><b>8</b><span>geoje tongyeong</span></a>
+    <a href="#slide9"><b>9</b><span>yeosu</span></a>
+    <a href="#slide10"><b>10</b><span>danyang jecheon</span></a>
+    <a href="#slide11"><b>11</b><span>gangneung yangyang</span></a>
+    <a href="#slide12"><b>12</b><span>schedule compare</span></a>
+    <a href="#slide13"><b>13</b><span>ranking</span></a>
+    <a href="#slide14"><b>14</b><span>final vote</span></a>
+    <a href="#slide15"><b>15</b><span>top2 decision matrix</span></a>
+    <a href="#slide16"><b>16</b><span>gyeongju detail options</span></a>
+    <a href="#slide17"><b>17</b><span>geoje tongyeong detail options</span></a>
+    <a href="#slide18"><b>18</b><span>june july calendar</span></a>
+    <a href="#slide19"><b>19</b><span>best itinerary</span></a>
+    <a href="#slide20"><b>20</b><span>entertainment kart concept</span></a>
+  </section>
+  <section class="slide" id="slide1" data-no="1">
+    <div class="slide-head"><div class="slide-title">01. cover</div><div class="slide-no">slide 1 / 20</div></div>
+    <img src="images/01_01_cover.png" alt="01. cover" loading="lazy" onclick="openViewer(0)" />
+    <div class="actions"><a href="images/01_01_cover.png" download>이미지 저장</a><a href="#toc">목차로</a></div>
+  </section>
+  <section class="slide" id="slide2" data-no="2">
+    <div class="slide-head"><div class="slide-title">02. toc</div><div class="slide-no">slide 2 / 20</div></div>
+    <img src="images/02_02_toc.png" alt="02. toc" loading="lazy" onclick="openViewer(1)" />
+    <div class="actions"><a href="images/02_02_toc.png" download>이미지 저장</a><a href="#toc">목차로</a></div>
+  </section>
+  <section class="slide" id="slide3" data-no="3">
+    <div class="slide-head"><div class="slide-title">03. conditions</div><div class="slide-no">slide 3 / 20</div></div>
+    <img src="images/03_03_conditions.png" alt="03. conditions" loading="lazy" onclick="openViewer(2)" />
+    <div class="actions"><a href="images/03_03_conditions.png" download>이미지 저장</a><a href="#toc">목차로</a></div>
+  </section>
+  <section class="slide" id="slide4" data-no="4">
+    <div class="slide-head"><div class="slide-title">04. criteria</div><div class="slide-no">slide 4 / 20</div></div>
+    <img src="images/04_04_criteria.png" alt="04. criteria" loading="lazy" onclick="openViewer(3)" />
+    <div class="actions"><a href="images/04_04_criteria.png" download>이미지 저장</a><a href="#toc">목차로</a></div>
+  </section>
+  <section class="slide" id="slide5" data-no="5">
+    <div class="slide-head"><div class="slide-title">05. distance</div><div class="slide-no">slide 5 / 20</div></div>
+    <img src="images/05_05_distance.png" alt="05. distance" loading="lazy" onclick="openViewer(4)" />
+    <div class="actions"><a href="images/05_05_distance.png" download>이미지 저장</a><a href="#toc">목차로</a></div>
+  </section>
+  <section class="slide" id="slide6" data-no="6">
+    <div class="slide-head"><div class="slide-title">06. budget</div><div class="slide-no">slide 6 / 20</div></div>
+    <img src="images/06_06_budget.png" alt="06. budget" loading="lazy" onclick="openViewer(5)" />
+    <div class="actions"><a href="images/06_06_budget.png" download>이미지 저장</a><a href="#toc">목차로</a></div>
+  </section>
+  <section class="slide" id="slide7" data-no="7">
+    <div class="slide-head"><div class="slide-title">07. gyeongju</div><div class="slide-no">slide 7 / 20</div></div>
+    <img src="images/07_07_gyeongju.png" alt="07. gyeongju" loading="lazy" onclick="openViewer(6)" />
+    <div class="actions"><a href="images/07_07_gyeongju.png" download>이미지 저장</a><a href="#toc">목차로</a></div>
+  </section>
+  <section class="slide" id="slide8" data-no="8">
+    <div class="slide-head"><div class="slide-title">08. geoje tongyeong</div><div class="slide-no">slide 8 / 20</div></div>
+    <img src="images/08_08_geoje_tongyeong.png" alt="08. geoje tongyeong" loading="lazy" onclick="openViewer(7)" />
+    <div class="actions"><a href="images/08_08_geoje_tongyeong.png" download>이미지 저장</a><a href="#toc">목차로</a></div>
+  </section>
+  <section class="slide" id="slide9" data-no="9">
+    <div class="slide-head"><div class="slide-title">09. yeosu</div><div class="slide-no">slide 9 / 20</div></div>
+    <img src="images/09_09_yeosu.png" alt="09. yeosu" loading="lazy" onclick="openViewer(8)" />
+    <div class="actions"><a href="images/09_09_yeosu.png" download>이미지 저장</a><a href="#toc">목차로</a></div>
+  </section>
+  <section class="slide" id="slide10" data-no="10">
+    <div class="slide-head"><div class="slide-title">10. danyang jecheon</div><div class="slide-no">slide 10 / 20</div></div>
+    <img src="images/10_10_danyang_jecheon.png" alt="10. danyang jecheon" loading="lazy" onclick="openViewer(9)" />
+    <div class="actions"><a href="images/10_10_danyang_jecheon.png" download>이미지 저장</a><a href="#toc">목차로</a></div>
+  </section>
+  <section class="slide" id="slide11" data-no="11">
+    <div class="slide-head"><div class="slide-title">11. gangneung yangyang</div><div class="slide-no">slide 11 / 20</div></div>
+    <img src="images/11_11_gangneung_yangyang.png" alt="11. gangneung yangyang" loading="lazy" onclick="openViewer(10)" />
+    <div class="actions"><a href="images/11_11_gangneung_yangyang.png" download>이미지 저장</a><a href="#toc">목차로</a></div>
+  </section>
+  <section class="slide" id="slide12" data-no="12">
+    <div class="slide-head"><div class="slide-title">12. schedule compare</div><div class="slide-no">slide 12 / 20</div></div>
+    <img src="images/12_12_schedule_compare.png" alt="12. schedule compare" loading="lazy" onclick="openViewer(11)" />
+    <div class="actions"><a href="images/12_12_schedule_compare.png" download>이미지 저장</a><a href="#toc">목차로</a></div>
+  </section>
+  <section class="slide" id="slide13" data-no="13">
+    <div class="slide-head"><div class="slide-title">13. ranking</div><div class="slide-no">slide 13 / 20</div></div>
+    <img src="images/13_13_ranking.png" alt="13. ranking" loading="lazy" onclick="openViewer(12)" />
+    <div class="actions"><a href="images/13_13_ranking.png" download>이미지 저장</a><a href="#toc">목차로</a></div>
+  </section>
+  <section class="slide" id="slide14" data-no="14">
+    <div class="slide-head"><div class="slide-title">14. final vote</div><div class="slide-no">slide 14 / 20</div></div>
+    <img src="images/14_14_final_vote.png" alt="14. final vote" loading="lazy" onclick="openViewer(13)" />
+    <div class="actions"><a href="images/14_14_final_vote.png" download>이미지 저장</a><a href="#toc">목차로</a></div>
+  </section>
+  <section class="slide" id="slide15" data-no="15">
+    <div class="slide-head"><div class="slide-title">15. top2 decision matrix</div><div class="slide-no">slide 15 / 20</div></div>
+    <img src="images/15_15_top2_decision_matrix.png" alt="15. top2 decision matrix" loading="lazy" onclick="openViewer(14)" />
+    <div class="actions"><a href="images/15_15_top2_decision_matrix.png" download>이미지 저장</a><a href="#toc">목차로</a></div>
+  </section>
+  <section class="slide" id="slide16" data-no="16">
+    <div class="slide-head"><div class="slide-title">16. gyeongju detail options</div><div class="slide-no">slide 16 / 20</div></div>
+    <img src="images/16_16_gyeongju_detail_options.png" alt="16. gyeongju detail options" loading="lazy" onclick="openViewer(15)" />
+    <div class="actions"><a href="images/16_16_gyeongju_detail_options.png" download>이미지 저장</a><a href="#toc">목차로</a></div>
+  </section>
+  <section class="slide" id="slide17" data-no="17">
+    <div class="slide-head"><div class="slide-title">17. geoje tongyeong detail options</div><div class="slide-no">slide 17 / 20</div></div>
+    <img src="images/17_17_geoje_tongyeong_detail_options.png" alt="17. geoje tongyeong detail options" loading="lazy" onclick="openViewer(16)" />
+    <div class="actions"><a href="images/17_17_geoje_tongyeong_detail_options.png" download>이미지 저장</a><a href="#toc">목차로</a></div>
+  </section>
+  <section class="slide" id="slide18" data-no="18">
+    <div class="slide-head"><div class="slide-title">18. june july calendar</div><div class="slide-no">slide 18 / 20</div></div>
+    <img src="images/18_18_june_july_calendar.png" alt="18. june july calendar" loading="lazy" onclick="openViewer(17)" />
+    <div class="actions"><a href="images/18_18_june_july_calendar.png" download>이미지 저장</a><a href="#toc">목차로</a></div>
+  </section>
+  <section class="slide" id="slide19" data-no="19">
+    <div class="slide-head"><div class="slide-title">19. best itinerary</div><div class="slide-no">slide 19 / 20</div></div>
+    <img src="images/19_19_best_itinerary.png" alt="19. best itinerary" loading="lazy" onclick="openViewer(18)" />
+    <div class="actions"><a href="images/19_19_best_itinerary.png" download>이미지 저장</a><a href="#toc">목차로</a></div>
+  </section>
+  <section class="slide" id="slide20" data-no="20">
+    <div class="slide-head"><div class="slide-title">20. entertainment kart concept</div><div class="slide-no">slide 20 / 20</div></div>
+    <img src="images/20_20_entertainment_kart_concept.png" alt="20. entertainment kart concept" loading="lazy" onclick="openViewer(19)" />
+    <div class="actions"><a href="images/20_20_entertainment_kart_concept.png" download>이미지 저장</a><a href="#toc">목차로</a></div>
+  </section>
+</main>
+<div class="bottom-nav"><div class="bottom-inner"><button onclick="prevSlide()">이전</button><button class="primary" onclick="openViewer(currentIndex)">크게 보기</button><button onclick="nextSlide()">다음</button></div></div>
+<div id="viewer" class="viewer" onclick="if(event.target.id==='viewer') closeViewer()">
+  <div class="viewer-top"><div class="viewer-title" id="viewerTitle"></div><button class="viewer-close" onclick="closeViewer()">닫기</button></div>
+  <div class="viewer-body"><img id="viewerImg" src="" alt="" /></div>
+  <div class="viewer-nav"><button onclick="viewerPrev()">이전</button><button class="primary" onclick="viewerNext()">다음</button></div>
+</div>
+<script>
+const slides = [{"no": 1, "file": "images/01_01_cover.png", "title": "cover"}, {"no": 2, "file": "images/02_02_toc.png", "title": "toc"}, {"no": 3, "file": "images/03_03_conditions.png", "title": "conditions"}, {"no": 4, "file": "images/04_04_criteria.png", "title": "criteria"}, {"no": 5, "file": "images/05_05_distance.png", "title": "distance"}, {"no": 6, "file": "images/06_06_budget.png", "title": "budget"}, {"no": 7, "file": "images/07_07_gyeongju.png", "title": "gyeongju"}, {"no": 8, "file": "images/08_08_geoje_tongyeong.png", "title": "geoje tongyeong"}, {"no": 9, "file": "images/09_09_yeosu.png", "title": "yeosu"}, {"no": 10, "file": "images/10_10_danyang_jecheon.png", "title": "danyang jecheon"}, {"no": 11, "file": "images/11_11_gangneung_yangyang.png", "title": "gangneung yangyang"}, {"no": 12, "file": "images/12_12_schedule_compare.png", "title": "schedule compare"}, {"no": 13, "file": "images/13_13_ranking.png", "title": "ranking"}, {"no": 14, "file": "images/14_14_final_vote.png", "title": "final vote"}, {"no": 15, "file": "images/15_15_top2_decision_matrix.png", "title": "top2 decision matrix"}, {"no": 16, "file": "images/16_16_gyeongju_detail_options.png", "title": "gyeongju detail options"}, {"no": 17, "file": "images/17_17_geoje_tongyeong_detail_options.png", "title": "geoje tongyeong detail options"}, {"no": 18, "file": "images/18_18_june_july_calendar.png", "title": "june july calendar"}, {"no": 19, "file": "images/19_19_best_itinerary.png", "title": "best itinerary"}, {"no": 20, "file": "images/20_20_entertainment_kart_concept.png", "title": "entertainment kart concept"}];
+let currentIndex = 0;
+const cur = document.getElementById('cur');
+function setCurrent(i) { currentIndex = Math.max(0, Math.min(slides.length-1, i)); cur.textContent = currentIndex+1; }
+function scrollToSlide(i) { setCurrent(i); document.getElementById('slide'+(i+1)).scrollIntoView({behavior:'smooth', block:'start'}); }
+function nextSlide() { scrollToSlide(currentIndex+1); }
+function prevSlide() { scrollToSlide(currentIndex-1); }
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting) setCurrent(Number(e.target.dataset.no)-1); });
+}, { threshold:0.55 });
+document.querySelectorAll('.slide').forEach(el => obs.observe(el));
+function openViewer(i) { setCurrent(i); const s=slides[currentIndex]; document.getElementById('viewerImg').src=s.file; document.getElementById('viewerTitle').textContent=(s.no+' / 20 · '+s.title); document.getElementById('viewer').classList.add('open'); }
+function closeViewer() { document.getElementById('viewer').classList.remove('open'); }
+function viewerNext() { openViewer(Math.min(slides.length-1,currentIndex+1)); }
+function viewerPrev() { openViewer(Math.max(0,currentIndex-1)); }
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeViewer(); if(e.key==='ArrowRight') viewerNext(); if(e.key==='ArrowLeft') viewerPrev(); });
+</script>
+</body>
+</html>
