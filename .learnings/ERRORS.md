@@ -61,3 +61,31 @@ For local dashboard QA when browser navigation is policy-blocked, use headless C
 - Related Files: /Users/dh/dashboard/workflow-kanban/index.html
 
 ---
+
+## [ERR-20260514-003] python_non_utf8_dashboard_script
+
+**Logged**: 2026-05-14T23:25:00+09:00
+**Priority**: low
+**Status**: resolved
+**Area**: tooling
+
+### Summary
+Temporary Python dashboard rewrite script failed because Korean text was present without an explicit source encoding declaration.
+
+### Error
+```text
+SyntaxError: Non-UTF-8 code starting with '\xec' in file /tmp/redesign_workflow_dashboard.py, but no encoding declared
+```
+
+### Context
+- Operation attempted: rewrite `~/dashboard/workflow-kanban/index.html` with Korean labels.
+- Fix used: added `# -*- coding: utf-8 -*-` to the temporary Python script and reran successfully.
+
+### Suggested Fix
+When generating temporary Python scripts that include Korean or other non-ASCII labels, add an explicit UTF-8 coding header or write the file with a UTF-8-safe mechanism.
+
+### Metadata
+- Reproducible: environment-dependent
+- Related Files: /Users/dh/dashboard/workflow-kanban/index.html
+
+---
