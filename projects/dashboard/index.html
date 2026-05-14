@@ -12,7 +12,7 @@
         --line: #e6ebf3;
         --line-strong: #d8e0ec;
         --text: #162033;
-        --muted: #6f7b8f;
+        --muted: #405066;
         --primary: #5b8def;
         --primary-soft: #eef4ff;
         --green: #17b26a;
@@ -36,6 +36,7 @@
         color: var(--text);
         background: linear-gradient(180deg, #f7f8fc 0%, #eef3fb 100%);
         line-height: 1.55;
+        font-size: 15px;
       }
 
       button, input, select, textarea { font: inherit; }
@@ -563,7 +564,7 @@
         padding: 14px 16px;
         border-bottom: 1px solid var(--line);
         vertical-align: top;
-        font-size: 14px;
+        font-size: 15px;
       }
       tbody tr:hover { background: #f8fbff; }
 
@@ -915,8 +916,10 @@
       function navItems() {
         const sidebar = state.dashboard?.sidebar || {};
         const cronErrorCount = state.dashboard?.overview?.counts?.cronErrors || 0;
+        const businessCount = state.dashboard?.businessOps?.counts?.todayAction || sidebar.businessCount || 0;
         return [
           { key: 'overview', emoji: '📊', label: '개요', count: sidebar.overviewCount || 0 },
+          { key: 'business', emoji: '🛒', label: '업무 관제', count: businessCount, danger: businessCount > 0 },
           { key: 'sessions', emoji: '💬', label: '세션', count: sidebar.sessionsCount || 0 },
           { key: 'cron', emoji: '⏰', label: '크론 잡', count: sidebar.cronCount || 0, danger: cronErrorCount > 0 },
           { key: 'activity', emoji: '🧾', label: '활동 로그', count: sidebar.activityCount || 0 },
@@ -960,6 +963,7 @@
         document.querySelectorAll('[data-nav]').forEach((button) => {
           button.addEventListener('click', () => {
             state.view = { type: button.dataset.nav, agentId: null };
+            history.replaceState(null, '', `#${button.dataset.nav}`);
             renderApp();
           });
         });
@@ -1511,9 +1515,156 @@
         `;
       }
 
+      function bizBadge(value) {
+        if (value === 'high' || value === 'error') return '<span class="badge err">긴급</span>';
+        if (value === 'medium' || value === 'pending') return '<span class="badge warn">확인</span>';
+        if (value === 'ok' || value === 'connected') return '<span class="badge ok">정상</span>';
+        if (value === 'disabled') return '<span class="badge warn">비활성</span>';
+        return `<span class="badge purple">${escapeHtml(value || '대기')}</span>`;
+      }
+
+      function renderBizMetric(label, value, hint, severity) {
+        const display = value === null || typeof value === 'undefined' ? '연동 대기' : numFmt.format(value);
+        return `
+          <div class="metric-box">
+            <div class="k">${escapeHtml(label)}</div>
+            <div class="v">${display}</div>
+            <div class="muted" style="font-size:12px; margin-top:6px">${escapeHtml(hint || '')}</div>
+            <div style="margin-top:8px">${bizBadge(severity || (value ? 'medium' : 'ok'))}</div>
+          </div>
+        `;
+      }
+
+      function renderBusiness() {
+        const biz = state.dashboard.businessOps || { counts: {}, todayCards: [], pipeline: [], cs: { rows: [] }, exceptions: { rows: [] }, sales: {}, products: {}, staff: {}, automations: { items: [] }, sources: [] };
+        const counts = biz.counts || {};
+        const qnaTypes = biz.cs?.summary?.countsByInquiryType || {};
+
+        return `
+          <div class="stats-grid">
+            ${statCard('오늘 액션', numFmt.format(counts.todayAction || 0), 'CS + 배송 + 자동화 경고 합산')}
+            ${statCard('CS 미처리', numFmt.format((counts.talktalkPending || 0) + (counts.qnaPending || 0)), `톡톡 ${numFmt.format(counts.talktalkPending || 0)} · 주문문의 ${numFmt.format(counts.qnaPending || 0)}`)}
+            ${statCard('배송 예외', numFmt.format(counts.logisticsExceptions || 0), `발송 실패 ${numFmt.format(counts.deliveryFailed || 0)}건 포함`)}
+            ${statCard('자동화 경고', numFmt.format(counts.automationErrors || 0), '로그인/루프 실패 상태')}
+          </div>
+
+          <div class="section-title"><h3>오늘 처리 우선순위</h3><span class="muted">클릭 전에도 바로 판단 가능하게 요약</span></div>
+          <div class="agent-compact-grid">
+            ${(biz.todayCards || []).map((card) => `
+              <div class="panel agent-compact-card">
+                <div class="agent-head"><strong style="font-size:18px">${escapeHtml(card.label)}</strong>${bizBadge(card.severity)}</div>
+                <div class="stat-value">${numFmt.format(card.value || 0)}</div>
+                <div class="muted">${escapeHtml(card.hint || '')}</div>
+              </div>
+            `).join('')}
+          </div>
+
+          <div class="section-title" style="margin-top:22px"><h3>주문·배송 파이프라인</h3><span class="muted">신규문의 → 승인 → 발송 → 예외/복구 흐름</span></div>
+          <div class="panel" style="padding:18px 20px; margin-bottom:18px">
+            <div class="agent-metrics" style="grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));">
+              ${(biz.pipeline || []).map((stage) => renderBizMetric(stage.label, stage.count, stage.hint, stage.severity)).join('')}
+            </div>
+          </div>
+
+          <div class="section-title"><h3>CS 업무판</h3><span class="muted">고객명/본문은 표시하지 않고, 작업에 필요한 신호만 표시</span></div>
+          <div class="table-panel panel" style="margin-bottom:18px">
+            <table>
+              <thead><tr><th>소스</th><th>식별자</th><th>유형</th><th>상태</th><th>경과/일시</th><th>핵심 신호</th><th>안전 상세</th></tr></thead>
+              <tbody>
+                ${(biz.cs?.rows || []).length ? (biz.cs.rows || []).map((row) => `
+                  <tr>
+                    <td><strong>${escapeHtml(row.source)}</strong></td>
+                    <td class="mono">${escapeHtml(row.code)}</td>
+                    <td>${escapeHtml(row.type)}</td>
+                    <td>${escapeHtml(row.status)}</td>
+                    <td>${escapeHtml(row.age)}</td>
+                    <td>${escapeHtml(row.signal)}</td>
+                    <td class="muted">${escapeHtml(row.safeDetail)}</td>
+                  </tr>
+                `).join('') : '<tr><td colspan="7"><div class="empty">현재 표시할 CS 항목이 없습니다.</div></td></tr>'}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="section-title"><h3>물류 예외판</h3><span class="muted">배송문의에서 바로 처리해야 할 병목</span></div>
+          <div class="warning-list" style="margin-bottom:18px">
+            ${(biz.exceptions?.rows || []).length ? biz.exceptions.rows.map((row) => `
+              <div class="warning-panel panel">
+                <div class="warning-header"><div><strong>${escapeHtml(row.type)} · ${escapeHtml(row.title)}</strong><div class="muted" style="margin-top:6px">${escapeHtml(row.detail)}</div></div>${bizBadge(row.severity)}</div>
+                <div class="warning-summary">다음 행동: ${escapeHtml(row.action)}</div>
+              </div>
+            `).join('') : '<div class="panel warning-panel"><div class="empty">현재 배송 예외가 없습니다 ✅</div></div>'}
+          </div>
+
+          <div class="settings-grid">
+            <div class="settings-box panel">
+              <div class="section-title"><h3>매출·마진판</h3>${bizBadge(biz.sales?.sourceStatus || 'pending')}</div>
+              <div class="agent-metrics" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
+                ${(biz.sales?.metrics || []).map((m) => renderBizMetric(m.label, m.value, m.hint, 'pending')).join('')}
+              </div>
+              <div class="settings-list">
+                <div class="settings-row"><div class="settings-key">다음 연결</div><div>${(biz.sales?.nextDataSources || []).map(escapeHtml).join(' · ') || '-'}</div></div>
+              </div>
+            </div>
+            <div class="settings-box panel">
+              <div class="section-title"><h3>상품 건강도</h3>${bizBadge(biz.products?.sourceStatus || 'pending')}</div>
+              <div class="settings-list">
+                ${(biz.products?.topIssues || []).length ? biz.products.topIssues.map((item) => `
+                  <div class="settings-row"><div class="settings-key">${numFmt.format(item.count)}건</div><div>${escapeHtml(item.label)}</div></div>
+                `).join('') : '<div class="muted">상품 이슈 데이터가 아직 없습니다.</div>'}
+                <div class="settings-row"><div class="settings-key">체크 항목</div><div>${(biz.products?.checks || []).map(escapeHtml).join(' · ')}</div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-grid">
+            <div class="settings-box panel">
+              <div class="section-title"><h3>직원·상품등록</h3>${bizBadge(biz.staff?.sourceStatus || 'pending')}</div>
+              <div class="agent-metrics" style="grid-template-columns:repeat(auto-fit,minmax(130px,1fr))">
+                ${(biz.staff?.metrics || []).map((m) => renderBizMetric(m.label, m.value, '', 'pending')).join('')}
+              </div>
+              <div class="settings-row" style="margin-top:14px"><div class="settings-key">다음 연결</div><div>${(biz.staff?.nextDataSources || []).map(escapeHtml).join(' · ') || '-'}</div></div>
+            </div>
+            <div class="settings-box panel">
+              <div class="section-title"><h3>문의 유형</h3><span class="muted">주문문의 기준</span></div>
+              <div class="settings-list">
+                ${Object.keys(qnaTypes).length ? Object.entries(qnaTypes).map(([name, value]) => `<div class="settings-row"><div class="settings-key">${escapeHtml(name)}</div><div>${numFmt.format(value)}건</div></div>`).join('') : '<div class="muted">유형별 데이터가 없습니다.</div>'}
+              </div>
+            </div>
+          </div>
+
+          <div class="section-title" style="margin-top:22px"><h3>자동화 헬스체크</h3><span class="muted">멈춤/로그인 필요를 조용히 방치하지 않기 위한 패널</span></div>
+          <div class="table-panel panel" style="margin-bottom:18px">
+            <table>
+              <thead><tr><th>자동화</th><th>상태</th><th>마지막 실행</th><th>요약</th><th>소스</th></tr></thead>
+              <tbody>
+                ${(biz.automations?.items || []).map((item) => `
+                  <tr><td><strong>${escapeHtml(item.name)}</strong></td><td>${badge(item.status)}</td><td>${escapeHtml(item.lastRunLabel || '-')}</td><td>${escapeHtml(item.summary || '-')}</td><td class="mono muted">${escapeHtml(item.source || '-')}</td></tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="section-title"><h3>데이터 소스</h3><span class="muted">현재 연결된 자료와 다음 연결 대상</span></div>
+          <div class="table-panel panel">
+            <table>
+              <thead><tr><th>자료</th><th>상태</th><th>경로/연동</th><th>개인정보 처리</th></tr></thead>
+              <tbody>
+                ${(biz.sources || []).map((source) => `
+                  <tr><td><strong>${escapeHtml(source.name)}</strong></td><td>${bizBadge(source.status === 'connected' ? 'connected' : source.status)}</td><td class="mono">${escapeHtml(source.path)}</td><td class="muted">${escapeHtml(source.privacy || '')}</td></tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+      }
+
       function renderPageMeta() {
         if (state.view.type === 'overview') {
           return { title: '개요', desc: '전체 운영 상태, 채널별 세션, 오류 크론, 에이전트 상태를 한눈에 봅니다.' };
+        }
+        if (state.view.type === 'business') {
+          return { title: '🛒 업무 관제', desc: 'CS, 주문·배송, 물류 예외, 매출/상품/직원/자동화 상태를 한 화면에서 봅니다.' };
         }
         if (state.view.type === 'sessions') {
           return { title: '세션', desc: '활성/저장 세션을 보고, 기본적으로 stored cron run 세션은 숨긴 상태에서 목록을 관리합니다.' };
@@ -1540,6 +1691,7 @@
         els.updatedAt.textContent = `업데이트: ${new Date(state.dashboard.generatedAt).toLocaleString('ko-KR')}`;
 
         if (state.view.type === 'overview') els.content.innerHTML = renderOverview();
+        else if (state.view.type === 'business') els.content.innerHTML = renderBusiness();
         else if (state.view.type === 'sessions') els.content.innerHTML = renderSessions();
         else if (state.view.type === 'cron') els.content.innerHTML = renderCron();
         else if (state.view.type === 'activity') els.content.innerHTML = renderActivity();
@@ -1607,6 +1759,10 @@
         els.forceRefreshBtn.disabled = true;
         try {
           state.dashboard = await fetchJson(`/api/dashboard${force ? '?force=1' : ''}`);
+          const hashView = location.hash.replace(/^#/, '');
+          if (['overview', 'business', 'sessions', 'cron', 'activity'].includes(hashView)) {
+            state.view = { type: hashView, agentId: null };
+          }
           if (state.view.type === 'agent' && !findAgent(state.view.agentId)) {
             state.view = { type: 'overview', agentId: null };
           }

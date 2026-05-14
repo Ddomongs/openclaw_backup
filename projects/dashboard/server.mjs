@@ -640,6 +640,303 @@ function makeActivityItem({ timestamp, kind, title, body, agentId, channel, stat
   };
 }
 
+async function listJsonFiles(relativeDir) {
+  const dir = path.join(CONFIG.workspaceDir, relativeDir);
+  try {
+    const entries = await fsp.readdir(dir, { withFileTypes: true });
+    const files = [];
+    for (const entry of entries) {
+      if (!entry.isFile() || !entry.name.endsWith('.json')) continue;
+      const filePath = path.join(dir, entry.name);
+      const stat = safeStatSync(filePath);
+      files.push({ filePath, fileName: entry.name, stat });
+    }
+    files.sort((a, b) => (b.stat?.mtimeMs || 0) - (a.stat?.mtimeMs || 0));
+    return files;
+  } catch {
+    return [];
+  }
+}
+
+async function readJsonQuiet(filePath, fallback = null) {
+  try {
+    return JSON.parse(await fsp.readFile(filePath, 'utf8'));
+  } catch {
+    return fallback;
+  }
+}
+
+async function readWorkspaceJson(relativePath, fallback = null) {
+  return readJsonQuiet(path.join(CONFIG.workspaceDir, relativePath), fallback);
+}
+
+function toMs(value) {
+  if (!value) return 0;
+  if (typeof value === 'number') return value;
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function shortCode(value, fallback = '-') {
+  const raw = String(value || fallback || '-');
+  if (raw === '-') return raw;
+  return raw.replace(/\.json$/i, '').slice(-12);
+}
+
+function maskNumber(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '-';
+  if (raw.length <= 8) return raw;
+  return `${raw.slice(0, 4)}…${raw.slice(-4)}`;
+}
+
+function safeBizText(value, maxLength = 80) {
+  return sanitizeText(value || '', maxLength) || '-';
+}
+
+function groupCount(items, keyFn) {
+  const map = new Map();
+  for (const item of items) {
+    const key = keyFn(item) || '기타';
+    map.set(key, (map.get(key) || 0) + 1);
+  }
+  return [...map.entries()]
+    .map(([label, count]) => ({ label, count }))
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+}
+
+function isCronBusinessJob(job) {
+  const hay = [job.name, job.description, job.id].join(' ').toLowerCase();
+  return /(smartstore|스마트스토어|talktalk|톡톡|navertalk|qna|문의|delivery|배송|selltkey|quickstar|퀵스타|naverpay)/i.test(hay);
+}
+
+async function buildBusinessOps(cronJobs = []) {
+  const [approvalFiles, outboxFiles, deliveryFiles] = await Promise.all([
+    listJsonFiles('runtime-data/local-cs-approvals'),
+    listJsonFiles('runtime-data/local-cs-discord-outbox'),
+    listJsonFiles('runtime-data/local-cs-delivery-queue'),
+  ]);
+
+  const approvals = (await Promise.all(approvalFiles.slice(0, 120).map(async (file) => {
+    const raw = await readJsonQuiet(file.filePath, {});
+    const createdAtMs = toMs(raw.createdAt || raw.queuedAt || file.stat?.mtimeMs);
+    return {
+      id: raw.approvalId || file.fileName.replace(/\.json$/i, ''),
+      code: raw.shortCode || shortCode(raw.approvalId || file.fileName),
+      createdAt: raw.createdAt || raw.queuedAt || null,
+      createdAtMs,
+      ageLabel: relativeTime(createdAtMs),
+      channel: raw.channel || 'talktalk',
+      inquiryType: raw.inquiryType || '문의',
+      status: raw.status || 'pending',
+      source: raw.source || '-',
+      quickstarChecked: Boolean(raw.meta?.quickstarChecked),
+      quickstarRequired: Boolean(raw.meta?.quickstarRequired),
+      quickstarStatus: raw.meta?.quickstarStatus || raw.meta?.shippingStatusCheck || '-',
+      trackingMasked: maskNumber(raw.trackingNo || raw.meta?.invoiceNo),
+      orderMasked: maskNumber(raw.meta?.orderNo || raw.meta?.productOrderNo),
+      productName: safeBizText(raw.productName || raw.meta?.productName, 70),
+      classification: raw.meta?.classificationCategory || '-',
+    };
+  }))).sort((a, b) => b.createdAtMs - a.createdAtMs);
+
+  const deliveryRows = (await Promise.all(deliveryFiles.slice(0, 120).map(async (file) => {
+    const raw = await readJsonQuiet(file.filePath, {});
+    const queuedAtMs = toMs(raw.queuedAt || raw.startedAt || file.stat?.mtimeMs);
+    return {
+      id: raw.approvalId || file.fileName.replace(/\.json$/i, ''),
+      code: raw.shortCode || shortCode(raw.approvalId || file.fileName),
+      queuedAt: raw.queuedAt || raw.startedAt || null,
+      queuedAtMs,
+      ageLabel: relativeTime(queuedAtMs),
+      status: raw.status || 'queued',
+      reason: raw.reason || '-',
+      inquiryType: raw.inquiryType || '문의',
+      quickstarStatus: raw.meta?.quickstarStatus || raw.meta?.shippingStatusCheck || '-',
+      trackingMasked: maskNumber(raw.meta?.invoiceNo || raw.trackingNo),
+      productName: safeBizText(raw.productName || raw.meta?.productName, 70),
+    };
+  }))).sort((a, b) => b.queuedAtMs - a.queuedAtMs);
+
+  const talktalkLatest = await readWorkspaceJson('runtime-data/app-talktalk-scan/latest.json', {});
+  const qnaLatest = await readWorkspaceJson('runtime-data/app-naverpay-qna-loop/latest.json', {});
+  const autoLoop = await readWorkspaceJson('runtime-data/app-auto-loop/status.json', {});
+  const selltkeyState = await readWorkspaceJson('runtime-data/selltkey-nonlogin-match-state.json', {});
+
+  const talktalkUnread = Array.isArray(talktalkLatest.rows)
+    ? sum(talktalkLatest.rows.map((row) => row.unreadCount || 0))
+    : 0;
+  const qnaPending = Number(qnaLatest.pendingCount || 0);
+  const deliveryFailed = deliveryRows.filter((row) => row.status === 'failed').length;
+  const deliveryQueued = deliveryRows.filter((row) => row.status !== 'failed' && row.status !== 'completed').length;
+  const automationItems = [
+    {
+      name: '톡톡 자동 루프',
+      status: autoLoop.talktalk?.lastOk === false ? 'error' : autoLoop.talktalk?.enabled ? 'ok' : 'disabled',
+      lastRun: autoLoop.talktalk?.lastFinishedAt || autoLoop.talktalk?.lastStartedAt || null,
+      lastRunLabel: relativeTime(toMs(autoLoop.talktalk?.lastFinishedAt || autoLoop.talktalk?.lastStartedAt)),
+      summary: autoLoop.talktalk?.lastError || autoLoop.talktalk?.lastSummary || '정상/대기',
+      source: 'runtime-data/app-auto-loop/status.json',
+    },
+    {
+      name: '주문문의 자동 루프',
+      status: autoLoop.qna?.lastOk === false ? 'error' : autoLoop.qna?.enabled ? 'ok' : 'disabled',
+      lastRun: autoLoop.qna?.lastFinishedAt || autoLoop.qna?.lastStartedAt || null,
+      lastRunLabel: relativeTime(toMs(autoLoop.qna?.lastFinishedAt || autoLoop.qna?.lastStartedAt)),
+      summary: autoLoop.qna?.lastError || autoLoop.qna?.lastSummary || '정상/대기',
+      source: 'runtime-data/app-auto-loop/status.json',
+    },
+    {
+      name: 'SelltKey 비로그인 매칭',
+      status: selltkeyState?.lastError ? 'error' : Object.keys(selltkeyState || {}).length ? 'ok' : 'pending',
+      lastRun: selltkeyState?.updatedAt || selltkeyState?.lastRunAt || null,
+      lastRunLabel: relativeTime(toMs(selltkeyState?.updatedAt || selltkeyState?.lastRunAt)),
+      summary: selltkeyState?.lastError || selltkeyState?.summary || '상태 파일 기준 표시',
+      source: 'runtime-data/selltkey-nonlogin-match-state.json',
+    },
+    ...cronJobs.filter(isCronBusinessJob).slice(0, 12).map((job) => ({
+      name: job.name,
+      status: job.status,
+      lastRun: job.lastRunAtMs || null,
+      lastRunLabel: job.lastRunLabel || '-',
+      summary: job.latestSummary || job.description || job.schedule?.expr || '-',
+      source: 'OpenClaw cron',
+    })),
+  ];
+
+  const automationErrors = automationItems.filter((item) => item.status === 'error').length;
+  const qnaRows = Array.isArray(qnaLatest.shippingRows) ? qnaLatest.shippingRows : [];
+  const productIssueCounts = groupCount([
+    ...qnaRows.map((row) => ({ product: safeBizText(row.productName, 70), source: '주문문의' })),
+    ...approvals.filter((row) => row.productName && row.productName !== '-').map((row) => ({ product: row.productName, source: '톡톡' })),
+  ], (item) => item.product).slice(0, 10);
+
+  const exceptionRows = [
+    ...deliveryRows.filter((row) => row.status === 'failed').map((row) => ({
+      type: '발송 실패',
+      severity: row.reason === 'talk_login_required' ? 'high' : 'medium',
+      title: `${row.code} · ${row.reason}`,
+      detail: `${row.inquiryType} · 송장 ${row.trackingMasked} · ${row.ageLabel}`,
+      action: row.reason === 'talk_login_required' ? '9223 자동화 Chrome 로그인 상태 확인' : '대화방/승인카드 매칭 재확인',
+    })),
+    ...approvals.filter((row) => row.quickstarRequired && !row.quickstarChecked).slice(0, 20).map((row) => ({
+      type: '퀵스타 미조회',
+      severity: 'medium',
+      title: `${row.code} · ${row.inquiryType}`,
+      detail: `상태 ${row.status} · 송장 ${row.trackingMasked}`,
+      action: 'Quickstar / 7customs / CJ 조회 후 고객용 초안 보강',
+    })),
+    ...approvals.filter((row) => row.trackingMasked === '-' && row.inquiryType.includes('배송')).slice(0, 20).map((row) => ({
+      type: '송장 누락',
+      severity: 'high',
+      title: `${row.code} · 배송문의`,
+      detail: `주문 ${row.orderMasked} · ${row.ageLabel}`,
+      action: '주문번호 기준 송장/해외트래킹 매칭 필요',
+    })),
+  ].slice(0, 30);
+
+  const csRows = [
+    ...approvals.slice(0, 18).map((row) => ({
+      source: '톡톡 승인',
+      code: row.code,
+      type: row.inquiryType,
+      status: row.status,
+      age: row.ageLabel,
+      signal: row.quickstarChecked ? row.quickstarStatus : '퀵스타 미조회',
+      safeDetail: `주문 ${row.orderMasked} · 송장 ${row.trackingMasked}`,
+    })),
+    ...qnaRows.slice(0, 12).map((row) => ({
+      source: '주문문의',
+      code: maskNumber(row.orderNo),
+      type: row.inquiryCategory || '문의',
+      status: row.answerYn || '미답변',
+      age: row.regDate || '-',
+      signal: row.title || '-',
+      safeDetail: safeBizText(row.productName, 70),
+    })),
+  ].slice(0, 30);
+
+  const counts = {
+    talktalkPending: Number(talktalkLatest.total || 0),
+    talktalkUnread,
+    qnaPending,
+    approvalPending: approvalFiles.length,
+    discordOutbox: outboxFiles.length,
+    deliveryQueued,
+    deliveryFailed,
+    automationErrors,
+    logisticsExceptions: exceptionRows.length,
+    productIssues: productIssueCounts.length,
+  };
+  counts.todayAction = counts.talktalkPending + counts.qnaPending + counts.approvalPending + counts.deliveryQueued + counts.deliveryFailed + counts.automationErrors;
+
+  return {
+    generatedAt: new Date().toISOString(),
+    counts,
+    todayCards: [
+      { label: 'CS 미처리', value: counts.talktalkPending + counts.qnaPending, hint: `톡톡 ${counts.talktalkPending} · 주문문의 ${counts.qnaPending}`, severity: counts.talktalkPending + counts.qnaPending > 0 ? 'high' : 'ok' },
+      { label: '승인/발송 대기', value: counts.approvalPending + counts.deliveryQueued, hint: `승인 ${counts.approvalPending} · 큐 ${counts.deliveryQueued}`, severity: counts.approvalPending + counts.deliveryQueued > 0 ? 'medium' : 'ok' },
+      { label: '배송 예외', value: counts.logisticsExceptions, hint: `실패 ${counts.deliveryFailed} · 미조회/송장누락 포함`, severity: counts.logisticsExceptions > 0 ? 'high' : 'ok' },
+      { label: '자동화 경고', value: counts.automationErrors, hint: '로그인 필요/루프 실패 감지', severity: counts.automationErrors > 0 ? 'high' : 'ok' },
+    ],
+    pipeline: [
+      { label: '톡톡 미확인', count: counts.talktalkPending, hint: `미읽음 ${counts.talktalkUnread}`, severity: counts.talktalkPending ? 'high' : 'ok' },
+      { label: '주문문의 미답변', count: counts.qnaPending, hint: `배송 ${qnaLatest.shippingCount || 0} · 기타 ${qnaLatest.nonShippingCount || 0}`, severity: counts.qnaPending ? 'high' : 'ok' },
+      { label: 'CS 승인 대기', count: counts.approvalPending, hint: '대표 승인 필요', severity: counts.approvalPending ? 'medium' : 'ok' },
+      { label: '발송 큐', count: counts.deliveryQueued, hint: `Discord outbox ${counts.discordOutbox}`, severity: counts.deliveryQueued ? 'medium' : 'ok' },
+      { label: '발송 실패', count: counts.deliveryFailed, hint: groupCount(deliveryRows.filter((r) => r.status === 'failed'), (r) => r.reason)[0]?.label || '없음', severity: counts.deliveryFailed ? 'high' : 'ok' },
+      { label: '자동화 복구', count: counts.automationErrors, hint: '크론/앱 루프 상태', severity: counts.automationErrors ? 'high' : 'ok' },
+    ],
+    cs: {
+      summary: {
+        talktalkTotal: counts.talktalkPending,
+        talktalkUnread: counts.talktalkUnread,
+        qnaPending,
+        countsByInquiryType: qnaLatest.countsByInquiryType || {},
+        latestScanAt: talktalkLatest.scannedAt || qnaLatest.updatedAt || null,
+      },
+      rows: csRows,
+    },
+    exceptions: {
+      summary: groupCount(exceptionRows, (row) => row.type),
+      rows: exceptionRows,
+    },
+    sales: {
+      sourceStatus: '연동 대기',
+      metrics: [
+        { label: '오늘 매출', value: null, hint: '마켓 정산/API 연결 필요' },
+        { label: '예상 순마진', value: null, hint: '환율·구매가·배송비 연결 필요' },
+        { label: '취소/환불 차감', value: null, hint: '마켓별 환불 데이터 연결 필요' },
+      ],
+      nextDataSources: ['스마트스토어 정산 CSV/API', '쿠팡/지마켓/11번가 주문 CSV', '중국 구매가·환율·국제배송비 테이블'],
+    },
+    products: {
+      sourceStatus: productIssueCounts.length ? '부분 연결' : '데이터 없음',
+      topIssues: productIssueCounts,
+      checks: ['가격 변동', '품절/옵션 삭제', 'CS 많은 상품', '배송 지연 많은 상품', '반품·환불 많은 상품'],
+    },
+    staff: {
+      sourceStatus: '연동 대기',
+      metrics: [
+        { label: '등록 대기', value: null },
+        { label: '검수 대기', value: null },
+        { label: '퍼센티 실패', value: null },
+      ],
+      nextDataSources: ['퍼센티 업로드 로그', '직원 등록 정산 시트', '상품 검수 체크리스트'],
+    },
+    automations: { items: automationItems },
+    sources: [
+      { name: '톡톡 스캔', path: 'runtime-data/app-talktalk-scan/latest.json', status: talktalkLatest.ok ? 'connected' : 'stale/empty', privacy: '목록 요약만 표시' },
+      { name: '주문문의 스캔', path: 'runtime-data/app-naverpay-qna-loop/latest.json', status: qnaLatest.ok ? 'connected' : 'stale/empty', privacy: '주문번호 마스킹' },
+      { name: 'CS 승인 카드', path: 'runtime-data/local-cs-approvals/*.json', status: approvalFiles.length ? 'connected' : 'empty', privacy: '고객명/본문 미표시' },
+      { name: 'CS 발송 큐', path: 'runtime-data/local-cs-delivery-queue/*.json', status: deliveryFiles.length ? 'connected' : 'empty', privacy: '식별자·상태만 표시' },
+      { name: '자동화 루프', path: 'runtime-data/app-auto-loop/status.json', status: Object.keys(autoLoop || {}).length ? 'connected' : 'empty', privacy: '오류 요약만 표시' },
+      { name: '매출/마진', path: '마켓 정산 CSV/API', status: 'pending', privacy: '연동 전' },
+      { name: '상품/직원', path: '퍼센티/직원 시트', status: 'pending', privacy: '연동 전' },
+    ],
+  };
+}
+
 function buildActivities(sessions, cronRuns, agentMap) {
   const items = [];
 
@@ -950,6 +1247,8 @@ async function buildDashboardData() {
     };
   });
 
+  const businessOps = await buildBusinessOps(cronJobs);
+
   const allAgentIds = new Set([
     ...configSummary.agents.map((agent) => agent.id),
     ...stored.stores.map((store) => store.agentId),
@@ -1115,10 +1414,12 @@ async function buildDashboardData() {
     overview,
     sidebar: {
       overviewCount: liveSessions.length,
+      businessCount: businessOps.counts?.todayAction || 0,
       sessionsCount: stored.sessions.length,
       cronCount: cronJobs.length,
       activityCount: activities.length,
     },
+    businessOps,
     sessions: stored.sessions.map((session) => ({
       key: session.key,
       sessionId: session.sessionId,
