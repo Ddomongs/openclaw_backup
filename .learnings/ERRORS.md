@@ -89,3 +89,32 @@ When generating temporary Python scripts that include Korean or other non-ASCII 
 - Related Files: /Users/dh/dashboard/workflow-kanban/index.html
 
 ---
+
+## [ERR-20260515-001] dashboard_localization_global_replace
+
+**Logged**: 2026-05-15T00:01:00+09:00
+**Priority**: medium
+**Status**: resolved
+**Area**: frontend
+
+### Summary
+A broad English-to-Korean string replacement for the dashboard HTML accidentally modified JavaScript identifiers and data property names.
+
+### Error
+```text
+Examples of bad generated strings: 실패ures, 대기Outbox, render개요, render운영, not사용 가능
+```
+
+### Context
+- Operation attempted: Korean-localize `~/dashboard/workflow-kanban/index.html`.
+- Cause: global replacements like `failed -> 실패`, `queued -> 대기`, `Ready -> 사용 가능` were applied to JS code as well as visible labels.
+- Fix used: regenerated the dashboard from the known-good template, then changed only static UI strings and visible render labels while preserving data keys.
+
+### Suggested Fix
+When localizing dashboards, avoid global replacements on mixed HTML/JS files. Use explicit UI label maps such as `labelStatus`, `labelPriority`, and `labelKind`, or edit only known static strings.
+
+### Metadata
+- Reproducible: yes
+- Related Files: /Users/dh/dashboard/workflow-kanban/index.html
+
+---
