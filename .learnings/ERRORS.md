@@ -118,3 +118,26 @@ When localizing dashboards, avoid global replacements on mixed HTML/JS files. Us
 - Related Files: /Users/dh/dashboard/workflow-kanban/index.html
 
 ---
+
+## [ERR-20260515-001] browser_open_localhost_policy
+
+**Logged**: 2026-05-15T09:47:00+09:00
+**Priority**: medium
+**Status**: pending
+**Area**: dashboard-qa
+
+### Summary
+OpenClaw browser tool reported `browser navigation blocked by policy` when opening local dashboard URL for visual QA.
+
+### Details
+After `scripts/browser-mcp/browser-ensure-ready.sh` returned ready, browser profile `user` tabs failed with missing DevToolsActivePort. Managed `openclaw` profile started successfully, but `browser.open`/`browser.navigate` to `http://127.0.0.1:8765/#actions` was blocked by policy.
+
+### Suggested Action
+For local dashboard QA, keep a fallback using Playwright/Chromium screenshot via exec when the browser tool cannot navigate to localhost, and report the browser-tool blocker separately.
+
+### Metadata
+- Source: conversation
+- Related Files: /Users/dh/dashboard/workflow-kanban/index.html
+- Tags: browser, dashboard, qa, localhost
+
+---
